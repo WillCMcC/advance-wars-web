@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const ROM_SHA = "ef3cc89273f9df88020f07751ea6306b25c39df01893822fe431550eedf9b134";
+const MGBA_CORE_PATH = /^\/emulator\/cores\/mgba(?:-thread)?(?:-legacy)?-wasm\.data$/;
 
 test("exact production release boots through the private HTTPS ingress", async ({ page, request }) => {
   const expected = process.env.EXPECTED_COMMIT;
@@ -36,7 +37,7 @@ test("exact production release boots through the private HTTPS ingress", async (
   const origin = new URL(page.url()).origin;
   expect(assets).toEqual(expect.arrayContaining([
     { origin, path: "/roms/advance-wars-2.gba" },
-    { origin, path: "/emulator/cores/mgba-wasm.data" }
+    { origin, path: expect.stringMatching(MGBA_CORE_PATH) }
   ]));
   expect((await page.locator(".ejs_canvas").screenshot()).byteLength).toBeGreaterThan(5_000);
 

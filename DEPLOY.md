@@ -52,7 +52,7 @@ Every release must prove:
 - the public wildcard hostname serves neither the app's unique shell/health markers nor a valid ROM
   byte range (in addition to not serving the reviewed commit);
 - direct HTTP to port `8092` from another Tailnet client is unreachable;
-- a fresh browser loads the local mGBA core and ROM, renders a frame, and registers the service
-  worker through the private HTTPS origin.
+- a fresh browser loads the runtime-selected variant from the four pinned local mGBA packages and
+  the ROM through the private HTTPS origin, renders a frame, and registers the service worker.
 
 A successful image upload alone is not a release.

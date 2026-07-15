@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { devices, expect, test } from "@playwright/test";
 
+const MGBA_CORE_PATH = /^\/emulator\/cores\/mgba(?:-thread)?(?:-legacy)?-wasm\.data$/;
+
 async function boot(page, { menu = false, url = "/?e2e=1" } = {}) {
   await page.goto(url);
   await expect(page.locator("#status-text")).toHaveText("Ready to deploy");
@@ -55,10 +57,12 @@ test("boots the cartridge and exposes usable touch controls on a phone", async (
     serviceWorkers: "block"
   });
   const page = await context.newPage();
-  const loadedAssets = new Set();
+  const loadedAssets = [];
   page.on("response", (response) => {
-    const pathname = new URL(response.url()).pathname;
-    if (response.ok() && (pathname.endsWith(".gba") || pathname.endsWith(".data"))) loadedAssets.add(pathname);
+    const url = new URL(response.url());
+    if (response.ok() && (url.pathname.endsWith(".gba") || url.pathname.endsWith(".data"))) {
+      loadedAssets.push({ origin: url.origin, path: url.pathname });
+    }
   });
 
   await boot(page);
@@ -70,8 +74,11 @@ test("boots the cartridge and exposes usable touch controls on a phone", async (
   await page.waitForTimeout(1_500);
   const renderedFrame = await page.locator(".ejs_canvas").screenshot();
   expect(renderedFrame.byteLength).toBeGreaterThan(5_000);
-  expect(loadedAssets.has("/roms/advance-wars-2.gba")).toBe(true);
-  expect([...loadedAssets].some((asset) => asset.includes("mgba") && asset.endsWith(".data"))).toBe(true);
+  const origin = new URL(page.url()).origin;
+  expect(loadedAssets).toEqual(expect.arrayContaining([
+    { origin, path: "/roms/advance-wars-2.gba" },
+    { origin, path: expect.stringMatching(MGBA_CORE_PATH) }
+  ]));
   expect(await page.evaluate(() => window.EJS_emulator?.getCore?.())).toBe("mgba");
   await context.close();
 });
