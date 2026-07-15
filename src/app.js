@@ -329,7 +329,7 @@ window.EJS_paths = {
 };
 window.EJS_color = activeGame.accent;
 window.EJS_backgroundColor = "#111a19";
-window.EJS_backgroundImage = "/icons/boot-map.svg";
+window.EJS_backgroundImage = activeGame.bootImage;
 window.EJS_backgroundBlur = false;
 window.EJS_startButtonName = activeGame.startLabel;
 window.EJS_alignStartButton = "center";

@@ -64,7 +64,7 @@ for (const game of config.games) {
 }
 
 await rm(dist, { recursive: true, force: true });
-for (const directory of ["assets", "roms", "seeds", "licenses"]) {
+for (const directory of ["assets", "art", "roms", "seeds", "licenses"]) {
   await mkdir(path.join(dist, directory), { recursive: true });
 }
 
@@ -75,6 +75,7 @@ for (const file of ["index.html", "app.css", "manifest.webmanifest", "service-wo
   await writeFile(target, contents);
 }
 await cp(path.join(source, "icons"), path.join(dist, "icons"), { recursive: true });
+await cp(path.join(source, "art"), path.join(dist, "art"), { recursive: true });
 for (const { game, rom, seed } of inputs) {
   await copyRequired(rom, path.join(dist, "roms", game.romFile));
   if (seed) await copyRequired(seed, path.join(dist, "seeds", game.seedFile));

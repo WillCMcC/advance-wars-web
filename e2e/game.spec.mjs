@@ -9,7 +9,8 @@ const games = [
     shortTitle: "Advance Wars 2",
     rom: "/roms/advance-wars-2.gba",
     bytes: 8_388_608,
-    saveBytes: 65_536
+    saveBytes: 65_536,
+    bootImage: "/art/advance-command-map.webp"
   },
   {
     id: "pokemon-emerald-rogue-v2-1a",
@@ -17,7 +18,8 @@ const games = [
     shortTitle: "Emerald Rogue",
     rom: "/roms/pokemon-emerald-rogue-v2.1a.gba",
     bytes: 33_554_432,
-    saveBytes: 131_072
+    saveBytes: 131_072,
+    bootImage: "/art/emerald-expedition-map.webp"
   }
 ];
 
@@ -53,13 +55,14 @@ test("renders the private two-cartridge Field Kit with no external runtime reque
 
   await page.goto(gameUrl(games[0]));
   await expect(page).toHaveTitle(games[0].title);
-  await expect(page.locator("main")).toHaveAttribute("data-release-marker", "field-kit-save-sync-v1");
+  await expect(page.locator("main")).toHaveAttribute("data-release-marker", "field-kit-model-art-v1");
   await expect(page.locator("main")).toHaveAttribute("data-active-game", games[0].id);
   await expect(page.getByRole("navigation", { name: "Choose a game" }).getByRole("link")).toHaveCount(2);
   await expect(page.getByRole("link", { name: /ER Roguelike/u })).toHaveAttribute("href", `/?game=${games[1].id}`);
   await expect(page.locator("#status-text")).toHaveText("Ready to launch");
   await expect(page.locator(".ejs_start_button")).toHaveText(/DEPLOY/u);
   await expect(page.locator("#game")).toBeVisible();
+  expect(await page.evaluate(() => window.EJS_backgroundImage)).toBe(games[0].bootImage);
   await expect(page.locator(".status-chip")).toHaveAttribute("role", "status");
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

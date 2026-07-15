@@ -16,8 +16,11 @@ const SHELL = [
   "/assets/fonts/bebas-neue-latin.woff2",
   "/assets/fonts/ibm-plex-mono-regular.woff2",
   "/assets/fonts/ibm-plex-mono-semibold.woff2",
-  "/icons/boot-map.svg",
+  "/art/advance-command-map.webp",
+  "/art/emerald-expedition-map.webp",
   "/icons/command-star.svg",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
   "/manifest.webmanifest",
   "/game-manifest.json"
 ];

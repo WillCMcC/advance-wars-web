@@ -28,6 +28,20 @@ test("pins both owner-supplied cartridge identities and the attached Emerald sav
   assert.match(config.games[1].seedSha256, /^[0-9a-f]{64}$/u);
 });
 
+test("ships distinct high-resolution model artwork for both cartridges", async () => {
+  assert.deepEqual(config.games.map((game) => game.bootImage), [
+    "/art/advance-command-map.webp",
+    "/art/emerald-expedition-map.webp"
+  ]);
+  for (const game of config.games) {
+    const artwork = await readFile(new URL(`../src${game.bootImage}`, import.meta.url));
+    assert.ok(artwork.byteLength > 100_000);
+    assert.equal(artwork.subarray(0, 4).toString("ascii"), "RIFF");
+    assert.equal(artwork.subarray(8, 12).toString("ascii"), "WEBP");
+  }
+  assert.match(app, /window\.EJS_backgroundImage = activeGame\.bootImage/u);
+});
+
 test("configures a switchable same-origin GBA runtime with persistent saves", () => {
   assert.match(app, /window\.EJS_core = "gba"/u);
   assert.match(app, /window\.EJS_gameUrl = `\/roms\/\$\{activeGame\.romFile\}`/u);
@@ -45,8 +59,8 @@ test("keeps game and save inputs outside version control", () => {
   assert.equal(tracked, "");
 });
 
-test("publishes the Field Kit library, accessible controls, and durable sync marker", () => {
-  assert.match(html, /data-release-marker="field-kit-save-sync-v1"/u);
+test("publishes the Field Kit library, accessible controls, and durable release marker", () => {
+  assert.match(html, /data-release-marker="field-kit-model-art-v1"/u);
   assert.match(html, /id="cartridge-dock"/u);
   assert.match(html, /id="sync-dialog"/u);
   assert.match(html, /aria-label="Field Kit save pairing QR code"/u);
@@ -56,6 +70,8 @@ test("publishes the Field Kit library, accessible controls, and durable sync mar
   assert.match(emulatorOverrides, /#game \.ejs_start_button \{[\s\S]*?position: absolute;[\s\S]*?z-index: 2;/u);
   assert.match(worker, /field-kit-shell-/u);
   assert.match(worker, /url\.pathname\.startsWith\("\/api\/"\)/u);
+  assert.match(worker, /advance-command-map\.webp/u);
+  assert.match(worker, /emerald-expedition-map\.webp/u);
   assert.match(worker, /pokemon-emerald-rogue-v2\.1a\.gba/u);
 });
 

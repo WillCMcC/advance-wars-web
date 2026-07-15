@@ -12,6 +12,8 @@ const required = [
   "assets/app.css",
   "assets/app.js",
   "assets/emulator-themed.css",
+  "art/advance-command-map.webp",
+  "art/emerald-expedition-map.webp",
   "emulator/loader.js",
   "emulator/emulator.bundle.js",
   "emulator/cores/mgba-wasm.data",
@@ -23,6 +25,8 @@ const required = [
   "seeds/pokemon-emerald-rogue-v2.1a.srm",
   "game-manifest.json",
   "manifest.webmanifest",
+  "icons/icon-192.png",
+  "icons/icon-512.png",
   "service-worker.js",
   "version.json",
   "licenses/Field-Kit-GPL-3.0.txt",
@@ -56,7 +60,7 @@ for (const game of config.games) {
 }
 
 const html = await readFile(path.join(dist, "index.html"), "utf8");
-assert.match(html, /data-release-marker="field-kit-save-sync-v1"/u);
+assert.match(html, /data-release-marker="field-kit-model-art-v1"/u);
 assert.match(html, /<title>Field Kit<\/title>/u);
 
 const app = await readFile(path.join(dist, "assets/app.js"), "utf8");
