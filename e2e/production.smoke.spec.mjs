@@ -32,6 +32,14 @@ test("exact production release boots both cartridges through private HTTPS", asy
   for (const game of games) expect(version.games[game.id]).toBe(game.sha);
   const manifest = await (await request.get("/game-manifest.json", { headers: { "cache-control": "no-cache" } })).json();
   expect(manifest.games).toHaveLength(2);
+  const assets = [];
+  page.on("response", (response) => {
+    const url = new URL(response.url());
+    if (response.ok() && (url.pathname.endsWith(".gba") || (url.pathname.includes("mgba") && url.pathname.endsWith(".data")))) {
+      assets.push({ origin: url.origin, path: url.pathname });
+    }
+  });
+
   for (const game of games) {
     expect(manifest.games.find((candidate) => candidate.id === game.id)).toMatchObject({
       core: "mgba",
@@ -41,13 +49,7 @@ test("exact production release boots both cartridges through private HTTPS", asy
   }
 
   for (const game of games) {
-    const assets = [];
-    page.on("response", (response) => {
-      const url = new URL(response.url());
-      if (response.ok() && (url.pathname.endsWith(".gba") || (url.pathname.includes("mgba") && url.pathname.endsWith(".data")))) {
-        assets.push({ origin: url.origin, path: url.pathname });
-      }
-    });
+    const previousRomResponses = assets.filter((asset) => asset.path === game.rom).length;
     await page.goto(`/?game=${game.id}&e2e=1&release=${expected}`, { waitUntil: "domcontentloaded" });
     expect(await page.evaluate(() => window.isSecureContext)).toBe(true);
     await expect(page).toHaveTitle(game.title);
@@ -58,14 +60,18 @@ test("exact production release boots both cartridges through private HTTPS", asy
     await expect.poll(() => page.evaluate(() => Boolean(window.EJS_emulator?.started)), { timeout: 45_000 }).toBe(true);
     expect(await page.evaluate(() => window.EJS_emulator?.getCore?.())).toBe("mgba");
     const origin = new URL(page.url()).origin;
-    expect(assets).toEqual(expect.arrayContaining([
-      { origin, path: game.rom },
-      { origin, path: expect.stringMatching(MGBA_CORE_PATH) }
-    ]));
+    expect(assets.filter((asset) => asset.origin === origin && asset.path === game.rom).length)
+      .toBeGreaterThan(previousRomResponses);
     await expect.poll(async () => (await page.locator(".ejs_canvas").screenshot()).byteLength).toBeGreaterThan(5_000);
   }
 
+  // Both cartridges use the same pinned mGBA core. The second navigation may reuse its .data
+  // from the browser memory cache without emitting another Playwright response event.
   const origin = new URL(page.url()).origin;
+  expect(assets).toEqual(expect.arrayContaining([
+    { origin, path: expect.stringMatching(MGBA_CORE_PATH) }
+  ]));
+
   expect(await page.evaluate(async () => {
     await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
     return (await navigator.serviceWorker.ready).scope;
