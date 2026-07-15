@@ -35,6 +35,7 @@ const types = new Map([
   [".srm", "application/octet-stream"],
   [".svg", "image/svg+xml"],
   [".wasm", "application/wasm"],
+  [".webp", "image/webp"],
   [".webmanifest", "application/manifest+json"],
   [".woff2", "font/woff2"]
 ]);

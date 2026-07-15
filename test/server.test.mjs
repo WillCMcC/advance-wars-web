@@ -10,8 +10,10 @@ async function fixture(t) {
   const dist = path.join(root, "dist");
   const data = path.join(root, "data");
   await mkdir(path.join(dist, "roms"), { recursive: true });
-  await writeFile(path.join(dist, "index.html"), "<main data-release-marker=\"field-kit-save-sync-v1\">Field Kit</main>");
+  await mkdir(path.join(dist, "art"), { recursive: true });
+  await writeFile(path.join(dist, "index.html"), "<main data-release-marker=\"field-kit-model-art-v1\">Field Kit</main>");
   await writeFile(path.join(dist, "roms", "sample.gba"), Buffer.from("0123456789"));
+  await writeFile(path.join(dist, "art", "sample.webp"), Buffer.from("RIFF0000WEBP"));
   const server = createFieldKitServer({ distDir: dist, dataDir: data });
   await server.ready;
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -27,8 +29,11 @@ test("serves the private shell, health probes, and byte ranges", async (t) => {
   const { origin } = await fixture(t);
   const page = await fetch(origin);
   assert.equal(page.status, 200);
-  assert.match(await page.text(), /field-kit-save-sync-v1/u);
+  assert.match(await page.text(), /field-kit-model-art-v1/u);
   assert.equal(page.headers.get("cross-origin-opener-policy"), "same-origin");
+  const artwork = await fetch(`${origin}/art/sample.webp`);
+  assert.equal(artwork.status, 200);
+  assert.equal(artwork.headers.get("content-type"), "image/webp");
   const health = await fetch(`${origin}/api/healthz`);
   assert.deepEqual(await health.json(), { ok: true, storage: "writable" });
   const range = await fetch(`${origin}/roms/sample.gba`, { headers: { Range: "bytes=2-5" } });
