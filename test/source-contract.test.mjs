@@ -102,6 +102,8 @@ test("pins the container supply chain and avoids immutable caching for mutable a
     /^FROM nginx:1\.30\.3-alpine@sha256:0d3b80406a13a767339fbe2f41406d6c7da727ab89cf8fae399e81f780f814d1$/m,
   );
   assert.doesNotMatch(nginx, /assets[\s\S]{0,160}immutable/);
+  assert.ok(nginx.includes('location ~* "\\.[a-z0-9]{1,12}$" {'));
+  assert.match(dockerfile, /^RUN nginx -t$/m);
   assert.match(nginx, /Strict-Transport-Security/);
   assert.match(license, /GNU GENERAL PUBLIC LICENSE\s+Version 3, 29 June 2007/);
   assert.ok(license.length > 30_000);

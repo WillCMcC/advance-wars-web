@@ -39,6 +39,10 @@ network, service, or port collision that is not recognized as owned state fails 
 Tailscale Serve handler is created only when its host and port are empty or already an exact match;
 unexpected Serve state also fails closed.
 
+The runtime image executes `nginx -t` during its build. Keep regular-expression locations quoted
+when they contain brace quantifiers: an nginx parser failure crash-loops the Swarm task before the
+service name can resolve from the Tailnet proxy.
+
 Every release must prove:
 
 - `/version.json` contains the exact merged commit;

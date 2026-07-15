@@ -9,6 +9,7 @@ FROM nginx:1.30.3-alpine@sha256:0d3b80406a13a767339fbe2f41406d6c7da727ab89cf8fae
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 RUN chmod -R a+rX /usr/share/nginx/html
+RUN nginx -t
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -qO- http://127.0.0.1/healthz | grep -q "advance wars web ok"
 EXPOSE 80
