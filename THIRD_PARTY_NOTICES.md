@@ -19,6 +19,12 @@ EmulatorJS bundles the [Socket.IO](https://socket.io/) 4.8.1 browser client for 
 features. It is licensed under the MIT License; the complete copyright and permission notice ships
 as `Socket.IO-MIT.txt`.
 
+## QRCode 1.5.4
+
+Pairing codes are rendered locally with [node-qrcode](https://github.com/soldair/node-qrcode),
+version 1.5.4, licensed under the MIT License. Pairing capabilities are never sent to a hosted QR
+service. The complete copyright and permission notice ships as `QRCode-MIT.txt`.
+
 ## mGBA core 4.2.3
 
 Game Boy Advance emulation is provided by the
@@ -35,5 +41,6 @@ corresponding core source and build system are available from the linked Emulato
   notice and terms ship as `IBM-Plex-Mono-OFL-1.1.txt`.
 
 Package versions and registry integrity hashes are pinned in `package-lock.json`. Advance Wars,
-Nintendo, Game Boy Advance, and related names and game data belong to their respective owners. No
-Nintendo BIOS or commercial ROM is included in this source repository.
+Pokemon, Pokemon Emerald, Emerald Rogue, Nintendo, Game Boy Advance, and related names and game data
+belong to their respective owners. No Nintendo BIOS, commercial ROM, ROM hack, or personal save is
+included in this source repository.

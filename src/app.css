@@ -25,8 +25,10 @@
   --panel-soft: #1a2724;
   --cream: #f3e9cf;
   --muted: #9aab9e;
-  --orange: #e84a25;
-  --orange-hot: #ff6a35;
+  --accent: #e84a25;
+  --accent-soft: #f6ad3c;
+  --orange: var(--accent);
+  --orange-hot: var(--accent-soft);
   --yellow: #f6bd3f;
   --blue: #2b7ca7;
   --line: rgba(230, 239, 213, 0.16);
@@ -36,6 +38,10 @@
 
 * {
   box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 html {
@@ -75,7 +81,7 @@ a:focus-visible {
   background-image:
     linear-gradient(rgba(222, 235, 206, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(222, 235, 206, 0.035) 1px, transparent 1px),
-    repeating-radial-gradient(ellipse at 15% 30%, transparent 0 34px, rgba(232, 74, 37, 0.065) 35px 36px, transparent 37px 54px);
+    repeating-radial-gradient(ellipse at 15% 30%, transparent 0 34px, color-mix(in srgb, var(--accent) 9%, transparent) 35px 36px, transparent 37px 54px);
   background-size: 48px 48px, 48px 48px, 340px 260px;
   mask-image: linear-gradient(to bottom, black, transparent 88%);
 }
@@ -93,6 +99,13 @@ a:focus-visible {
   backdrop-filter: blur(18px);
 }
 
+html[data-game="rogue-expedition"] body {
+  background:
+    radial-gradient(circle at 76% 8%, rgba(75, 213, 138, 0.19), transparent 28rem),
+    radial-gradient(circle at 14% 86%, rgba(216, 240, 109, 0.06), transparent 30rem),
+    linear-gradient(135deg, #0b1511 0%, #07100d 52%, #102019 100%);
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -108,7 +121,7 @@ a:focus-visible {
   place-items: center;
   transform: rotate(-5deg);
   background: var(--orange);
-  box-shadow: 5px 5px 0 #5f241b;
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--accent) 35%, #020806);
 }
 
 .brand-mark svg {
@@ -132,6 +145,67 @@ a:focus-visible {
   font-size: 10px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
+}
+
+.cartridge-dock {
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  margin-inline: auto;
+  padding-inline: 18px;
+}
+
+.cartridge-tab {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-width: 118px;
+  min-height: 42px;
+  padding: 6px 10px;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.025);
+  text-decoration: none;
+  transition: border-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.cartridge-tab::after {
+  position: absolute;
+  right: -6px;
+  bottom: -9px;
+  width: 34px;
+  height: 20px;
+  content: "";
+  transform: rotate(-24deg);
+  background: var(--accent);
+  opacity: 0;
+}
+
+.cartridge-tab > span {
+  color: var(--cream);
+  font: 400 23px/1 var(--display);
+  letter-spacing: 0.05em;
+}
+
+.cartridge-tab small {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cartridge-tab:hover,
+.cartridge-tab[data-active="true"] {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
+  color: var(--cream);
+  transform: translateY(-1px);
+}
+
+.cartridge-tab[data-active="true"]::after {
+  opacity: 1;
 }
 
 .header-actions {
@@ -171,6 +245,12 @@ a:focus-visible {
 .status-chip[data-state="saved"] .status-light {
   background: #72c997;
   box-shadow: 0 0 0 4px rgba(114, 201, 151, 0.1), 0 0 10px #72c997;
+}
+
+.status-chip[data-state="syncing"] .status-light {
+  animation: signal 0.8s steps(2, jump-none) infinite;
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-soft) 12%, transparent), 0 0 12px var(--accent-soft);
 }
 
 .status-chip[data-state="running"] .status-light {
@@ -252,7 +332,7 @@ a:focus-visible {
   left: 10px;
   width: 7px;
   background: var(--orange);
-  box-shadow: 11px 0 0 rgba(232, 74, 37, 0.25);
+  box-shadow: 11px 0 0 color-mix(in srgb, var(--accent) 26%, transparent);
 }
 
 .screen-bezel {
@@ -497,6 +577,10 @@ dialog {
   box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75);
 }
 
+#sync-dialog {
+  width: min(920px, calc(100% - 28px));
+}
+
 dialog::backdrop {
   background: rgba(2, 6, 5, 0.78);
   backdrop-filter: blur(8px);
@@ -576,11 +660,177 @@ dialog::backdrop {
   cursor: pointer;
 }
 
+.sync-card {
+  min-height: 460px;
+}
+
+.sync-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 54px);
+  margin-top: 30px;
+  align-items: start;
+}
+
+.qr-frame {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 12px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--accent) 65%, var(--line));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent 45%),
+    #0a1210;
+  box-shadow: 8px 8px 0 color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.qr-frame canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.qr-frame > span {
+  max-width: 18ch;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.sync-copy > p {
+  margin: 0 0 20px;
+  color: #b9c3b4;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.sync-copy label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--accent-soft);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.link-copy-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.link-copy-row input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-radius: 0;
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.24);
+  font: 10px var(--mono);
+}
+
+.link-copy-row button,
+.sync-conflict button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  color: var(--cream);
+  background: #202c28;
+  font: 600 10px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sync-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.sync-actions .manual-dismiss {
+  min-width: 0;
+  margin: 0;
+}
+
+.sync-actions .utility-button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.text-button {
+  grid-column: 1 / -1;
+  min-height: 42px;
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  font: 10px var(--mono);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.sync-copy .sync-warning {
+  margin: 18px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--accent);
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.sync-conflict {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #ad493e;
+  background: rgba(173, 73, 62, 0.09);
+}
+
+.sync-conflict strong {
+  color: #ff9584;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.sync-conflict p {
+  margin: 8px 0 12px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.sync-conflict button + button {
+  margin-left: 6px;
+}
+
 @keyframes signal {
   50% { opacity: 0.45; }
 }
 
 @media (max-width: 980px) {
+  .site-header {
+    flex-wrap: wrap;
+  }
+
+  .cartridge-dock {
+    order: 3;
+    width: 100%;
+    padding: 10px 0 0;
+    justify-content: center;
+  }
+
+  .cartridge-tab {
+    flex: 1;
+    max-width: 220px;
+  }
+
   .page {
     grid-template-columns: minmax(0, 1fr) 270px;
     gap: 30px;
@@ -604,12 +854,7 @@ dialog::backdrop {
   }
 
   .status-chip {
-    min-height: 38px;
-    max-width: 112px;
-    padding-inline: 8px;
-    overflow: hidden;
-    font-size: 8px;
-    white-space: nowrap;
+    display: none;
   }
 
   html[data-install-available] #fullscreen-button {
@@ -629,6 +874,10 @@ dialog::backdrop {
     min-height: 38px;
     padding-inline: 10px;
     font-size: 10px;
+  }
+
+  #fullscreen-button {
+    display: none;
   }
 
   .page {
@@ -677,6 +926,15 @@ dialog::backdrop {
   .mobile-order {
     display: flex;
   }
+
+  .sync-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-frame {
+    width: min(280px, 100%);
+    margin-inline: auto;
+  }
 }
 
 @media (max-width: 520px) {
@@ -687,6 +945,32 @@ dialog::backdrop {
   .help-grid {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+
+  .header-actions {
+    gap: 4px;
+  }
+
+  .utility-button {
+    padding-inline: 8px;
+    font-size: 9px;
+  }
+
+  .cartridge-dock {
+    gap: 4px;
+  }
+
+  .cartridge-tab {
+    min-width: 0;
+  }
+
+  .sync-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .sync-actions .utility-button,
+  .sync-actions .text-button {
+    grid-column: auto;
   }
 }
 
@@ -703,10 +987,16 @@ dialog::backdrop {
     padding-bottom: 6px;
   }
 
+  .cartridge-dock,
+  #sync-button,
+  #install-button {
+    display: none;
+  }
+
   .brand-mark {
     width: 32px;
     height: 32px;
-    box-shadow: 3px 3px 0 #5f241b;
+    box-shadow: 3px 3px 0 color-mix(in srgb, var(--accent) 35%, #020806);
   }
 
   .brand strong {

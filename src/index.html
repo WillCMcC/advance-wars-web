@@ -4,42 +4,44 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#e84a25" />
-    <meta name="description" content="Play the verified Advance Wars 2 campaign cartridge in a fast, installable browser field console." />
+    <meta name="description" content="A private, installable field kit for owner-supplied Game Boy Advance games and encrypted save sync." />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icons/command-star.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/app.css" />
-    <title>Advance Wars 2 — Field Console</title>
+    <title>Field Kit</title>
   </head>
   <body>
     <div class="terrain" aria-hidden="true"></div>
     <header class="site-header">
-      <a class="brand" href="/" aria-label="Advance Wars 2 field console home">
+      <a class="brand" href="/" aria-label="Field Kit home">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 48 48" role="img">
             <path d="M24 2 29.7 17.5 46 18 33.1 28 37.7 44 24 34.7 10.3 44 14.9 28 2 18l16.3-.5Z" />
           </svg>
         </span>
         <span>
-          <strong>Field Console</strong>
-          <small>Orange Star // Secure uplink</small>
+          <strong>Field Kit</strong>
+          <small>Private multi-cart uplink</small>
         </span>
       </a>
+      <nav class="cartridge-dock" id="cartridge-dock" aria-label="Choose a game"></nav>
       <div class="header-actions">
         <div class="status-chip" role="status" aria-live="polite" aria-atomic="true" aria-label="Game status">
           <span class="status-light" aria-hidden="true"></span>
           <span id="status-text">Loading emulator</span>
         </div>
+        <button class="utility-button" id="sync-button" type="button">Sync devices</button>
         <button class="utility-button" id="install-button" type="button" hidden>Install</button>
         <button class="utility-button" id="fullscreen-button" type="button">Full screen</button>
         <button class="utility-button utility-button--solid" id="help-button" type="button">Controls</button>
       </div>
     </header>
 
-    <main class="page" data-release-marker="advance-wars-2-black-hole-rising">
+    <main class="page" data-release-marker="field-kit-save-sync-v1" data-active-game="">
       <section class="play-column" aria-labelledby="game-title">
         <div class="mission-label">
-          <span>Campaign cartridge 02</span>
-          <span>AW2E01 / Rev.00</span>
+          <span id="file-label">Cartridge loading</span>
+          <span id="identity-label">Verifying field kit</span>
         </div>
 
         <div class="screen-housing" id="screen-housing">
@@ -49,12 +51,12 @@
           <div class="screw screw--sw" aria-hidden="true"></div>
           <div class="screw screw--se" aria-hidden="true"></div>
           <div class="screen-bezel">
-            <div id="game" aria-label="Advance Wars 2 game display"></div>
+            <div id="game" aria-label="Game display"></div>
           </div>
           <div class="housing-footer" aria-hidden="true">
             <span>ARM7 FIELD UNIT</span>
             <span class="speaker-grille"></span>
-            <span>LINK READY</span>
+            <span id="link-state">LINK LOCAL</span>
           </div>
         </div>
 
@@ -65,13 +67,11 @@
       </section>
 
       <aside class="intel-panel" aria-labelledby="game-title">
-        <div class="intel-kicker">Mission file // 02</div>
-        <h1 id="game-title"><span>Advance</span> Wars 2</h1>
-        <p class="subtitle">Black Hole Rising</p>
+        <div class="intel-kicker" id="intel-kicker">Mission file</div>
+        <h1 id="game-title"><span id="title-lead">Field</span> <span id="title-tail">Kit</span></h1>
+        <p class="subtitle" id="game-subtitle">Private cartridge rack</p>
         <div class="rule"></div>
-        <p class="briefing">
-          Command Orange Star, Blue Moon, Yellow Comet, and Green Earth against the returning Black Hole army.
-        </p>
+        <p class="briefing" id="game-briefing">Choose a cartridge and deploy the local emulator.</p>
 
         <dl class="readout-grid">
           <div>
@@ -79,8 +79,8 @@
             <dd>mGBA 4.2.3</dd>
           </div>
           <div>
-            <dt>Save data</dt>
-            <dd>This device</dd>
+            <dt>Save link</dt>
+            <dd id="sync-summary">This device</dd>
           </div>
           <div>
             <dt>Display</dt>
@@ -101,9 +101,9 @@
           <div><kbd>E</kbd><span>R</span></div>
         </div>
 
-        <p class="save-note">
+        <p class="save-note" id="save-note">
           <span aria-hidden="true">●</span>
-          In-game saves and save states stay in this browser. Use the emulator menu to export a backup.
+          Saves stay in this browser until you pair another device.
         </p>
 
         <footer class="legal-links">
@@ -112,6 +112,44 @@
         </footer>
       </aside>
     </main>
+
+    <dialog id="sync-dialog" aria-labelledby="sync-title">
+      <form method="dialog" class="help-card sync-card">
+        <div class="help-heading">
+          <div>
+            <span>Encrypted save link</span>
+            <h2 id="sync-title">Carry this run</h2>
+          </div>
+          <button class="close-button" value="close" aria-label="Close save sync">×</button>
+        </div>
+        <div class="sync-layout">
+          <div class="qr-frame" id="qr-frame">
+            <canvas id="sync-qr" role="img" aria-label="Field Kit save pairing QR code" hidden></canvas>
+            <span id="qr-placeholder">Start the game before pairing.</span>
+          </div>
+          <div class="sync-copy">
+            <p id="sync-detail">One scan pairs your phone with this browser. Save bytes are encrypted here before the private server stores them.</p>
+            <label for="sync-link">Private pairing link</label>
+            <div class="link-copy-row">
+              <input id="sync-link" type="text" readonly autocomplete="off" spellcheck="false" aria-label="Private pairing link" />
+              <button id="copy-sync-link" type="button">Copy</button>
+            </div>
+            <div class="sync-actions">
+              <button class="manual-dismiss" id="create-sync-link" type="button">Make pairing QR</button>
+              <button class="utility-button" id="sync-now" type="button" disabled>Sync now</button>
+              <button class="text-button" id="forget-sync" type="button" hidden>Stop syncing this device</button>
+            </div>
+            <p class="sync-warning">The QR contains the decryption key. Scan it directly; don’t post or save a screenshot.</p>
+            <div class="sync-conflict" id="sync-conflict" hidden>
+              <strong>Two devices changed this save.</strong>
+              <p>Choose the copy you want to keep. Nothing is overwritten until you decide.</p>
+              <button id="keep-device-save" type="button">Keep this device</button>
+              <button id="use-remote-save" type="button">Use synced copy</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </dialog>
 
     <dialog id="help-dialog" aria-labelledby="help-title">
       <form method="dialog" class="help-card">
@@ -129,15 +167,15 @@
           </section>
           <section>
             <h3>Phone & tablet</h3>
-            <p>Tap <strong>Deploy</strong> once, then use the on-screen GBA controls. Landscape gives the map and controls the most room.</p>
+            <p>Launch once, then use the on-screen GBA controls. Landscape gives the game and controls the most room.</p>
           </section>
           <section>
-            <h3>Controller</h3>
-            <p>Any standard gamepad should work immediately. Remap it from the emulator menu if your buttons feel reversed.</p>
+            <h3>Save sync</h3>
+            <p>Start a game, choose <strong>Sync devices</strong>, and scan the QR from your other device. Changes sync every few seconds while the game is running.</p>
           </section>
           <section>
             <h3>Save safely</h3>
-            <p>The original cartridge save works automatically. The menu also offers save states plus save-file import and export.</p>
+            <p>Original cartridge saves work automatically. The emulator menu still offers local save-file import and export for manual backups.</p>
           </section>
         </div>
         <button class="manual-dismiss" value="close">Understood</button>

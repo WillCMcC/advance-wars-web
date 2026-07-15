@@ -3,15 +3,12 @@ import { execFileSync } from "node:child_process";
 import { cp, copyFile, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const source = path.join(root, "src");
-const game = JSON.parse(await readFile(path.join(root, "config/game.json"), "utf8"));
-
-const requiredRom = process.env.ADVANCE_WARS_ROM
-  ? path.resolve(process.env.ADVANCE_WARS_ROM)
-  : path.join(root, ".release-rom", game.romFile);
+const config = JSON.parse(await readFile(path.join(root, "config/games.json"), "utf8"));
 
 async function sha256(file) {
   const bytes = await readFile(file);
@@ -37,31 +34,51 @@ function resolveCommit() {
   return execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
 }
 
-const romStat = await stat(requiredRom).catch(() => null);
-if (!romStat?.isFile()) {
-  throw new Error(`Missing owner-supplied ROM. Set ADVANCE_WARS_ROM or stage ${path.relative(root, requiredRom)}.`);
+function stagedPath(kind, file) {
+  return path.join(root, ".release-games", kind, file);
 }
-if (romStat.size !== game.romBytes) {
-  throw new Error(`ROM size mismatch: expected ${game.romBytes}, received ${romStat.size}`);
+
+async function requirePinnedFile(file, bytes, digest, label) {
+  const info = await stat(file).catch(() => null);
+  if (!info?.isFile()) throw new Error(`Missing owner-supplied ${label}: ${file}`);
+  if (info.size !== bytes) throw new Error(`${label} size mismatch: expected ${bytes}, received ${info.size}`);
+  const actual = await sha256(file);
+  if (actual !== digest) throw new Error(`${label} digest mismatch: expected ${digest}, received ${actual}`);
+  return actual;
 }
-const romDigest = await sha256(requiredRom);
-if (romDigest !== game.romSha256) {
-  throw new Error(`ROM digest mismatch: expected ${game.romSha256}, received ${romDigest}`);
+
+const inputs = [];
+for (const game of config.games) {
+  const rom = process.env[game.romEnv]
+    ? path.resolve(process.env[game.romEnv])
+    : stagedPath("roms", game.romFile);
+  const romDigest = await requirePinnedFile(rom, game.romBytes, game.romSha256, `${game.title} ROM`);
+  let seed = null;
+  if (game.seedFile) {
+    seed = process.env[game.seedEnv]
+      ? path.resolve(process.env[game.seedEnv])
+      : stagedPath("seeds", game.seedFile);
+    await requirePinnedFile(seed, game.saveBytes, game.seedSha256, `${game.title} save`);
+  }
+  inputs.push({ game, rom, romDigest, seed });
 }
 
 await rm(dist, { recursive: true, force: true });
-await mkdir(path.join(dist, "assets"), { recursive: true });
-await mkdir(path.join(dist, "roms"), { recursive: true });
-await mkdir(path.join(dist, "licenses"), { recursive: true });
+for (const directory of ["assets", "roms", "seeds", "licenses"]) {
+  await mkdir(path.join(dist, directory), { recursive: true });
+}
 
-for (const file of ["index.html", "app.css", "app.js", "manifest.webmanifest", "service-worker.js"]) {
-  const target = file === "app.css" || file === "app.js" ? path.join(dist, "assets", file) : path.join(dist, file);
+for (const file of ["index.html", "app.css", "manifest.webmanifest", "service-worker.js"]) {
+  const target = file === "app.css" ? path.join(dist, "assets", file) : path.join(dist, file);
   let contents = await readFile(path.join(source, file), "utf8");
   contents = contents.replaceAll("__BUILD_COMMIT__", resolveCommit());
   await writeFile(target, contents);
 }
 await cp(path.join(source, "icons"), path.join(dist, "icons"), { recursive: true });
-await copyRequired(requiredRom, path.join(dist, "roms", game.romFile));
+for (const { game, rom, seed } of inputs) {
+  await copyRequired(rom, path.join(dist, "roms", game.romFile));
+  if (seed) await copyRequired(seed, path.join(dist, "seeds", game.seedFile));
+}
 
 const emulatorPackage = path.join(root, "node_modules/@emulatorjs/emulatorjs");
 const emulatorData = path.join(emulatorPackage, "data");
@@ -82,7 +99,7 @@ const runtimeSource = await Promise.all(
 );
 await writeFile(
   path.join(dist, "emulator", "emulator.bundle.js"),
-  `/* EmulatorJS ${game.emulatorVersion}; unminified GPL-3.0 runtime. */\n${runtimeSource.join("\n;\n")}`
+  `/* EmulatorJS ${config.emulatorVersion}; unminified GPL-3.0 runtime. */\n${runtimeSource.join("\n;\n")}`
 );
 
 const emulatorCss = await readFile(path.join(emulatorData, "emulator.css"), "utf8");
@@ -106,11 +123,26 @@ for (const [sourceFile, targetFile] of [
   await copyRequired(path.join(root, "node_modules", sourceFile), path.join(dist, "assets", "fonts", targetFile));
 }
 
+await build({
+  entryPoints: [path.join(source, "app.js")],
+  outfile: path.join(dist, "assets", "app.js"),
+  bundle: true,
+  format: "iife",
+  platform: "browser",
+  target: ["es2022"],
+  legalComments: "inline",
+  define: {
+    __FIELD_KIT_GAMES__: JSON.stringify(config.games.map(({ romEnv, seedEnv, internalTitle, gameCode, revision, ...game }) => game)),
+    __FIELD_KIT_EMULATOR_VERSION__: JSON.stringify(config.emulatorVersion)
+  }
+});
+
 await copyRequired(path.join(emulatorPackage, "LICENSE"), path.join(dist, "licenses", "EmulatorJS-GPL-3.0.txt"));
 await copyRequired(path.join(root, "node_modules/nipplejs/LICENSE"), path.join(dist, "licenses", "NippleJS-MIT.txt"));
 await copyRequired(path.join(root, "node_modules/socket.io/LICENSE"), path.join(dist, "licenses", "Socket.IO-MIT.txt"));
-await copyRequired(path.join(root, "LICENSE"), path.join(dist, "licenses", "Advance-Wars-Web-GPL-3.0.txt"));
-await copyRequired(path.join(root, "NOTICE"), path.join(dist, "licenses", "Advance-Wars-Web-NOTICE.txt"));
+await copyRequired(path.join(root, "node_modules/qrcode/license"), path.join(dist, "licenses", "QRCode-MIT.txt"));
+await copyRequired(path.join(root, "LICENSE"), path.join(dist, "licenses", "Field-Kit-GPL-3.0.txt"));
+await copyRequired(path.join(root, "NOTICE"), path.join(dist, "licenses", "Field-Kit-NOTICE.txt"));
 await copyRequired(path.join(root, "licenses/MPL-2.0.txt"), path.join(dist, "licenses", "mGBA-MPL-2.0.txt"));
 await copyRequired(
   path.join(root, "node_modules/@fontsource/bebas-neue/LICENSE"),
@@ -123,20 +155,25 @@ await copyRequired(
 await copyRequired(path.join(root, "THIRD_PARTY_NOTICES.md"), path.join(dist, "licenses", "THIRD_PARTY_NOTICES.md"));
 
 const commit = resolveCommit();
-await writeFile(
-  path.join(dist, "game-manifest.json"),
-  `${JSON.stringify({
-    id: game.id,
-    title: game.title,
-    system: game.system,
-    core: game.core,
-    emulator_version: game.emulatorVersion,
-    rom: { file: game.romFile, bytes: game.romBytes, sha256: game.romSha256 }
-  }, null, 2)}\n`
-);
+const publicGames = config.games.map((game) => ({
+  id: game.id,
+  title: game.title,
+  system: game.system,
+  core: game.core,
+  emulator_version: config.emulatorVersion,
+  rom: { file: game.romFile, bytes: game.romBytes, sha256: game.romSha256 },
+  save: game.seedFile
+    ? { bytes: game.saveBytes, seed_file: game.seedFile, seed_sha256: game.seedSha256 }
+    : { bytes: game.saveBytes }
+}));
+await writeFile(path.join(dist, "game-manifest.json"), `${JSON.stringify({ games: publicGames }, null, 2)}\n`);
 await writeFile(
   path.join(dist, "version.json"),
-  `${JSON.stringify({ app: "advance-wars-web", commit, rom_sha256: game.romSha256 })}\n`
+  `${JSON.stringify({
+    app: "field-kit",
+    commit,
+    games: Object.fromEntries(config.games.map((game) => [game.id, game.romSha256]))
+  })}\n`
 );
 
-console.log(`Built ${game.title} at ${commit.slice(0, 12)} with verified ROM ${romDigest.slice(0, 12)}…`);
+console.log(`Built Field Kit at ${commit.slice(0, 12)} with ${inputs.length} verified owner-supplied games.`);

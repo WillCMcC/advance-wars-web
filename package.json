@@ -1,9 +1,9 @@
 {
-  "name": "advance-wars-web",
+  "name": "field-kit",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "A browser field console for an owner-supplied Advance Wars 2 cartridge image.",
+  "description": "A private browser field kit for owner-supplied Game Boy Advance cartridge images.",
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "npm test && npm run build && npm run test:build",
@@ -17,10 +17,12 @@
     "@emulatorjs/core-mgba": "4.2.3",
     "@emulatorjs/emulatorjs": "4.2.3",
     "@fontsource/bebas-neue": "5.2.7",
-    "@fontsource/ibm-plex-mono": "5.2.7"
+    "@fontsource/ibm-plex-mono": "5.2.7",
+    "qrcode": "1.5.4"
   },
   "devDependencies": {
-    "@playwright/test": "1.61.1"
+    "@playwright/test": "1.61.1",
+    "esbuild": "0.28.1"
   },
   "overrides": {
     "@emulatorjs/emulatorjs": "4.2.3",

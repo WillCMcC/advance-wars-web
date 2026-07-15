@@ -1,4 +1,8 @@
-const CACHE = "advance-wars-shell-__BUILD_COMMIT__";
+const CACHE = "field-kit-shell-__BUILD_COMMIT__";
+const ROMS = new Map([
+  ["/roms/advance-wars-2.gba", "8388608"],
+  ["/roms/pokemon-emerald-rogue-v2.1a.gba", "33554432"]
+]);
 const SHELL = [
   "/",
   "/assets/app.css",
@@ -25,21 +29,21 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key.startsWith("advance-wars-shell-") && key !== CACHE).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith("field-kit-shell-") && key !== CACHE).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
 
-  if (event.request.method === "HEAD" && url.pathname === "/roms/advance-wars-2.gba") {
+  if (event.request.method === "HEAD" && ROMS.has(url.pathname)) {
     event.respondWith(
       caches.open(CACHE).then(async (cache) => {
-        const cached = await cache.match("/roms/advance-wars-2.gba");
+        const cached = await cache.match(url.pathname);
         const headers = new Headers(cached?.headers);
-        headers.set("Content-Length", "8388608");
+        headers.set("Content-Length", ROMS.get(url.pathname));
         headers.set("Content-Type", "application/octet-stream");
         headers.set("Accept-Ranges", "bytes");
         return new Response(null, { status: 200, headers });
@@ -50,7 +54,7 @@ self.addEventListener("fetch", (event) => {
 
   if (event.request.method !== "GET") return;
 
-  if (url.pathname === "/roms/advance-wars-2.gba") {
+  if (ROMS.has(url.pathname)) {
     event.respondWith(
       caches.open(CACHE).then(async (cache) => {
         const cached = await cache.match(event.request);
@@ -59,6 +63,15 @@ self.addEventListener("fetch", (event) => {
         if (response.ok) await cache.put(event.request, response.clone());
         return response;
       })
+    );
+    return;
+  }
+
+  if (url.pathname.startsWith("/seeds/")) return;
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match("/"))
     );
     return;
   }

@@ -3,7 +3,8 @@ dist/
 test-results/
 playwright-report/
 .deploy-version
-.release-rom/
+.release-games/
+.e2e-data/
 *.gba
 .DS_Store
 *.log

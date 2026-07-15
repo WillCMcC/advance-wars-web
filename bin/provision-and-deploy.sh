@@ -11,6 +11,7 @@ proxy_name="advance-wars-tailnet-proxy"
 proxy_network="captain-overlay-network"
 proxy_service="srv-captain--${app}"
 proxy_image="nginx:1.30.3-alpine@sha256:0d3b80406a13a767339fbe2f41406d6c7da727ab89cf8fae399e81f780f814d1"
+data_dir="/opt/field-kit-data"
 login="${CAPROVER_LOGIN_TOOL:-$HOME/code/caprover-control/scripts/caprover-login.sh}"
 config="${CAPROVER_CONFIG:-$HOME/.config/configstore/caprover.json}"
 deploy="${CAPROVER_DEPLOY_TOOL:-$HOME/brain/bin/caprover-tar-deploy.sh}"
@@ -19,7 +20,7 @@ ssh_bin="${SSH_BIN:-ssh}"
 ssh_options=(-o BatchMode=yes -o ConnectTimeout=20)
 
 fail() {
-  echo "advance-wars provision: $*" >&2
+  echo "field-kit provision: $*" >&2
   exit 1
 }
 
@@ -41,6 +42,12 @@ mew_node_id="$("$ssh_bin" "${ssh_options[@]}" will@mew \
   "sudo -n docker info --format '{{.Swarm.NodeID}}'")" || fail "could not discover mew's Swarm node ID"
 [[ "$mew_node_id" =~ ^[a-z0-9]{25}$ ]] || fail "mew returned an invalid Swarm node ID"
 
+echo "Preparing mew:$data_dir for encrypted save records..."
+"$ssh_bin" "${ssh_options[@]}" will@mew "set -e
+  sudo -n install -d -o 1000 -g 1000 -m 0700 '$data_dir'
+  sudo -n -u '#1000' test -w '$data_dir'
+  [ \"\$(sudo -n stat -c '%u:%g:%a' '$data_dir')\" = '1000:1000:700' ]"
+
 "$login" >/dev/null
 machine_row="$(jq -er --arg name "$machine" '
   .CapMachines[] | select(.name == $name) | [.baseUrl, .authToken] | @tsv
@@ -57,23 +64,44 @@ if ! jq -e --arg app "$app" --argjson port "$backend_port" '
   fail "private backend port $backend_port is already owned by another CapRover app"
 fi
 app_count="$(jq -r --arg app "$app" '[.data.appDefinitions[] | select(.appName == $app)] | length' <<<"$definitions")"
+if [ "$app_count" = 1 ] && ! jq -e --arg app "$app" '
+  .data.appDefinitions[] | select(.appName == $app) | .hasPersistentData == true
+' <<<"$definitions" >/dev/null; then
+  jq -e --arg app "$app" '
+    .data.appDefinitions[] | select(.appName == $app)
+    | .hasPersistentData == false
+      and (.description == "Private owner-only Advance Wars 2 browser PWA")
+      and (.instanceCount == 1)
+      and (.notExposeAsWebApp == true)
+      and (.containerHttpPort == 80)
+      and ((.volumes // []) == [])
+      and ((.ports // []) == [])
+      and ((.customDomain // []) == [])
+  ' <<<"$definitions" >/dev/null || fail "$app has unexpected stateless settings; refusing persistence migration"
+  echo "Migrating the known stateless $app definition to persistent Field Kit storage..."
+  payload="$(jq -nc --arg app "$app" '{appName:$app,volumes:[]}')"
+  response="$("$curl_bin" -fsS --max-time 60 -X POST "${headers[@]}" -H "content-type: application/json" \
+    --data "$payload" "$base_url/api/v2/user/apps/appDefinitions/delete")"
+  require_status_ok "stateless app removal" "$response"
+  app_count=0
+elif [ "$app_count" -gt 1 ]; then
+  fail "expected at most one app definition named $app, found $app_count"
+fi
 
 if [ "$app_count" = 0 ]; then
-  echo "Registering private stateless CapRover app $app..."
-  payload="$(jq -nc --arg app "$app" '{appName:$app,hasPersistentData:false}')"
+  echo "Registering private persistent CapRover app $app..."
+  payload="$(jq -nc --arg app "$app" '{appName:$app,hasPersistentData:true}')"
   response="$("$curl_bin" -fsS --max-time 60 -X POST "${headers[@]}" -H "content-type: application/json" \
     --data "$payload" "$base_url/api/v2/user/apps/appDefinitions/register")"
   require_status_ok "app registration" "$response"
-elif [ "$app_count" != 1 ]; then
-  fail "expected at most one app definition named $app, found $app_count"
 fi
 
 definitions="$("$curl_bin" -fsS --max-time 30 "${headers[@]}" "$base_url/api/v2/user/apps/appDefinitions")"
 require_status_ok "post-registration app discovery" "$definitions"
 if ! jq -e --arg app "$app" '
-  [.data.appDefinitions[] | select(.appName == $app and .hasPersistentData == false)] | length == 1
+  [.data.appDefinitions[] | select(.appName == $app and .hasPersistentData == true)] | length == 1
 ' <<<"$definitions" >/dev/null; then
-  fail "$app exists but is not registered as stateless; repair it deliberately before deploying"
+  fail "$app exists but is not registered as persistent; repair it deliberately before deploying"
 fi
 had_deployed_image="$(jq -r --arg app "$app" '
   .data.appDefinitions[] | select(.appName == $app) as $definition
@@ -95,17 +123,17 @@ done < <(jq -r --arg app "$app" '
 
 desired="$(jq -nc --arg app "$app" --arg node_id "$mew_node_id" '{
   appName: $app,
-  hasPersistentData: false,
+  hasPersistentData: true,
   projectId: "",
-  description: "Private owner-only Advance Wars 2 browser PWA",
+  description: "Private owner-only Field Kit browser PWA with encrypted save sync",
   instanceCount: 1,
   captainDefinitionRelativeFilePath: "./captain-definition",
   envVars: [],
-  volumes: [],
+  volumes: [{hostPath:"/opt/field-kit-data",containerPath:"/data"}],
   tags: [],
   nodeId: $node_id,
   notExposeAsWebApp: true,
-  containerHttpPort: 80,
+  containerHttpPort: 8080,
   forceSsl: false,
   ports: [],
   customDomain: [],
@@ -136,17 +164,17 @@ require_status_ok "configuration verification" "$definitions"
 if ! jq -e --arg app "$app" --arg node_id "$mew_node_id" --argjson port "$backend_port" '
   [.data.appDefinitions[] | select(.appName == $app)] as $matches
   | ($matches | length) == 1
-  and ($matches[0].hasPersistentData == false)
+  and ($matches[0].hasPersistentData == true)
   and ($matches[0].projectId == "")
-  and ($matches[0].description == "Private owner-only Advance Wars 2 browser PWA")
+  and ($matches[0].description == "Private owner-only Field Kit browser PWA with encrypted save sync")
   and ($matches[0].instanceCount == 1)
   and ($matches[0].captainDefinitionRelativeFilePath == "./captain-definition")
   and (($matches[0].envVars // []) == [])
-  and (($matches[0].volumes // []) == [])
+  and (($matches[0].volumes // []) == [{hostPath:"/opt/field-kit-data",containerPath:"/data"}])
   and (($matches[0].tags // []) == [])
   and ($matches[0].nodeId == $node_id)
   and ($matches[0].notExposeAsWebApp == true)
-  and ($matches[0].containerHttpPort == 80)
+  and ($matches[0].containerHttpPort == 8080)
   and ($matches[0].forceSsl == false)
   and (($matches[0].ports // []) == [])
   and (($matches[0].customDomain // []) == [])
@@ -173,7 +201,7 @@ if [ "$bootstrap_without_image" = 1 ] && ! jq -e --arg app "$app" '
   fail "CapRover reported a missing first image, but its read-back definition already has one"
 fi
 
-echo "Verified $app: one stateless replica pinned to mew, zero published ports, no public CapRover ingress."
+echo "Verified $app: one persistent replica pinned to mew, encrypted-save storage, zero published ports, and no public CapRover ingress."
 "$deploy" "$app" "$machine"
 
 "$ssh_bin" "${ssh_options[@]}" will@mew \
@@ -247,7 +275,7 @@ http {
 
   upstream advance_wars {
     zone advance_wars 64k;
-    server srv-captain--advance-wars:80 resolve;
+    server srv-captain--advance-wars:8080 resolve;
   }
 
   server {
@@ -393,7 +421,7 @@ fi
 
 for attempt in $(seq 1 60); do
   if curl -fsS --max-time 5 "http://127.0.0.1:${backend_port}/healthz" |
-    grep -Fq 'advance wars web ok'; then
+    grep -Fq 'field kit ok'; then
     exit 0
   fi
   [ "$attempt" -lt 60 ] || {

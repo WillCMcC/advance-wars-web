@@ -5,11 +5,17 @@ RUN npm ci --omit=optional
 COPY . .
 RUN npm run build && npm run test:build
 
-FROM nginx:1.30.3-alpine@sha256:0d3b80406a13a767339fbe2f41406d6c7da727ab89cf8fae399e81f780f814d1
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/dist /usr/share/nginx/html
-RUN chmod -R a+rX /usr/share/nginx/html
-RUN nginx -t
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://127.0.0.1/healthz | grep -q "advance wars web ok"
-EXPOSE 80
+FROM node:22-alpine@sha256:16e22a550f3863206a3f701448c45f7912c6896a62de43add43bb9c86130c3e2 AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV FIELD_KIT_DATA_DIR=/data
+RUN mkdir -p /data && chown node:node /data && chmod 0700 /data
+COPY --from=builder --chown=node:node /app/dist ./dist
+COPY --chown=node:node server ./server
+USER node
+VOLUME ["/data"]
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:8080/healthz | grep -q "field kit ok"
+CMD ["node", "server/index.mjs"]

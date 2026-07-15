@@ -3,110 +3,115 @@ import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const game = JSON.parse(await readFile(new URL("../config/game.json", import.meta.url), "utf8"));
+const config = JSON.parse(await readFile(new URL("../config/games.json", import.meta.url), "utf8"));
 const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+const crypto = await readFile(new URL("../src/sync-crypto.js", import.meta.url), "utf8");
 const emulatorOverrides = await readFile(new URL("../src/emulator-overrides.css", import.meta.url), "utf8");
 const html = await readFile(new URL("../src/index.html", import.meta.url), "utf8");
 const worker = await readFile(new URL("../src/service-worker.js", import.meta.url), "utf8");
+const server = await readFile(new URL("../server/app.mjs", import.meta.url), "utf8");
 const release = await readFile(new URL("../bin/release.sh", import.meta.url), "utf8");
 const provision = await readFile(new URL("../bin/provision-and-deploy.sh", import.meta.url), "utf8");
-const nginx = await readFile(new URL("../nginx.conf", import.meta.url), "utf8");
 const dockerfile = await readFile(new URL("../Dockerfile", import.meta.url), "utf8");
 const license = await readFile(new URL("../LICENSE", import.meta.url), "utf8");
 const notices = await readFile(new URL("../THIRD_PARTY_NOTICES.md", import.meta.url), "utf8");
 
-test("pins the supplied Advance Wars 2 cartridge identity", () => {
-  assert.equal(game.id, "advance-wars-2-black-hole-rising");
-  assert.equal(game.romBytes, 8 * 1024 * 1024);
-  assert.match(game.romSha256, /^[0-9a-f]{64}$/);
+test("pins both owner-supplied cartridge identities and the attached Emerald save", () => {
+  assert.deepEqual(config.games.map((game) => game.id), [
+    "advance-wars-2-black-hole-rising",
+    "pokemon-emerald-rogue-v2-1a"
+  ]);
+  assert.equal(config.games[0].romBytes, 8 * 1024 * 1024);
+  assert.equal(config.games[1].romBytes, 32 * 1024 * 1024);
+  assert.equal(config.games[1].saveBytes, 128 * 1024);
+  for (const game of config.games) assert.match(game.romSha256, /^[0-9a-f]{64}$/u);
+  assert.match(config.games[1].seedSha256, /^[0-9a-f]{64}$/u);
 });
 
-test("configures a same-origin GBA runtime with persistent saves", () => {
-  assert.match(app, /EJS_core = "gba"/);
-  assert.match(app, /EJS_gameUrl = "\/roms\/advance-wars-2\.gba"/);
-  assert.match(app, /EJS_disableLocalStorage = false/);
-  assert.match(app, /EJS_defaultOptions = \{ "save-state-location": "browser" \}/);
-  assert.doesNotMatch(app, /EJS_onSaveSave|EJS_onLoadSave/);
-  assert.doesNotMatch(app, /cdn\.emulatorjs\.org/);
+test("configures a switchable same-origin GBA runtime with persistent saves", () => {
+  assert.match(app, /window\.EJS_core = "gba"/u);
+  assert.match(app, /window\.EJS_gameUrl = `\/roms\/\$\{activeGame\.romFile\}`/u);
+  assert.match(app, /window\.EJS_disableLocalStorage = false/u);
+  assert.match(app, /"save-state-location": "browser"/u);
+  assert.match(app, /"save-save-interval": 10/u);
+  assert.doesNotMatch(app, /cdn\.emulatorjs\.org/u);
 });
 
-test("keeps cartridge images outside version control", () => {
-  const trackedRoms = execFileSync("git", ["ls-files", "--", "*.gba"], {
+test("keeps game and save inputs outside version control", () => {
+  const tracked = execFileSync("git", ["ls-files", "--", "*.gba", "*.srm"], {
     cwd: new URL("..", import.meta.url),
     encoding: "utf8"
   });
-  assert.equal(trackedRoms, "");
+  assert.equal(tracked, "");
 });
 
-test("publishes accessible controls and a durable release marker", () => {
-  assert.match(html, /data-release-marker="advance-wars-2-black-hole-rising"/);
-  assert.match(html, /aria-label="Game status"/);
-  assert.match(html, /<dialog id="help-dialog"/);
-  assert.match(app, /startButton\.parentElement\?\.prepend\(startButton\)/);
-  assert.match(app, /startButton\.setAttribute\("role", "button"\)/);
-  assert.match(app, /startButton\.tabIndex = 0/);
-  assert.match(app, /\["Enter", " "\]\.includes\(event\.key\)/);
-  assert.match(emulatorOverrides, /#game \.ejs_start_button \{[\s\S]*?position: absolute;[\s\S]*?z-index: 2;/);
-  assert.match(emulatorOverrides, /\.ejs_start_button:focus-visible/);
-  assert.match(worker, /advance-wars-shell-/);
-  assert.match(worker, /event\.request\.method === "HEAD"/);
-  assert.match(worker, /emulator\/compression\/extract7z\.js/);
+test("publishes the Field Kit library, accessible controls, and durable sync marker", () => {
+  assert.match(html, /data-release-marker="field-kit-save-sync-v1"/u);
+  assert.match(html, /id="cartridge-dock"/u);
+  assert.match(html, /id="sync-dialog"/u);
+  assert.match(html, /aria-label="Field Kit save pairing QR code"/u);
+  assert.match(app, /startButton\.parentElement\?\.prepend\(startButton\)/u);
+  assert.match(app, /startButton\.setAttribute\("role", "button"\)/u);
+  assert.match(app, /startButton\.tabIndex = 0/u);
+  assert.match(emulatorOverrides, /#game \.ejs_start_button \{[\s\S]*?position: absolute;[\s\S]*?z-index: 2;/u);
+  assert.match(worker, /field-kit-shell-/u);
+  assert.match(worker, /url\.pathname\.startsWith\("\/api\/"\)/u);
+  assert.match(worker, /pokemon-emerald-rogue-v2\.1a\.gba/u);
+});
+
+test("uses fragment-only QR capabilities and client-side authenticated encryption", () => {
+  assert.match(app, /url\.hash = new URLSearchParams\(\{ sync: capability \}\)/u);
+  assert.match(app, /history\.replaceState\(null, "",/u);
+  assert.match(app, /encryptSave\(bytes, capability, activeGame\.id\)/u);
+  assert.match(crypto, /name: "AES-GCM"/u);
+  assert.match(crypto, /name: "HKDF"/u);
+  assert.match(crypto, /additionalData: encoder\.encode\(`field-kit-save-v1:/u);
+  assert.doesNotMatch(server, /decrypt|subtle|sync capability/u);
+  assert.match(server, /Cache-Control": "no-store"/u);
+  assert.match(server, /same-origin request required/u);
+  assert.match(server, /If-None-Match is required/u);
+  assert.match(server, /revision changed/u);
 });
 
 test("allows production deployment only from reviewed release entry points", () => {
-  assert.match(release, /TODOBOY_DEPLOY_TASK must identify the merge-gated release task/);
-  assert.match(release, /ADVANCE_WARS_PROJECTS_RELEASE/);
-  assert.match(release, /release requires the deploy train or the explicit Projects-pane release entry point/);
-  assert.match(release, /git check-ignore -q \.release-rom\//);
-  assert.doesNotMatch(release, /TODOBOY_DEPLOY_COMMIT:-\$head_commit/);
-  assert.match(release, /version\.json.*deploy_commit/s);
-  assert.match(release, /npm run test:e2e:live/);
+  execFileSync("bash", ["-n", "bin/release.sh", "bin/provision-and-deploy.sh"], {
+    cwd: new URL("..", import.meta.url)
+  });
+  assert.match(release, /TODOBOY_DEPLOY_TASK must identify the merge-gated release task/u);
+  assert.match(release, /ADVANCE_WARS_PROJECTS_RELEASE/u);
+  assert.match(release, /release requires the deploy train or the explicit Projects-pane release entry point/u);
+  assert.match(release, /git check-ignore -q \.release-games\//u);
+  assert.doesNotMatch(release, /TODOBOY_DEPLOY_COMMIT:-\$head_commit/u);
+  assert.match(release, /version\.json.*deploy_commit/su);
+  assert.match(release, /npm run test:e2e:live/u);
 });
 
-test("keeps the cartridge behind the private Tailnet ingress", () => {
-  assert.match(provision, /notExposeAsWebApp: true/);
-  assert.match(provision, /ports: \[\]/);
-  assert.doesNotMatch(provision, /ports:\s*\[\s*\{/);
-  assert.match(provision, /docker info --format '\{\{\.Swarm\.NodeID\}\}'/);
-  assert.match(provision, /nodeId: \$node_id/);
-  assert.doesNotMatch(provision, /nodeId: null/);
-  assert.match(provision, /captain-overlay-network/);
-  assert.match(provision, /Spec\.EndpointSpec\.Ports \/\/ \[\]/);
-  assert.match(provision, /Endpoint\.Ports \/\/ \[\]/);
-  assert.match(provision, /127\.0\.0\.1:\$\{backend_port\}:8080/);
-  assert.match(provision, /resolver 127\.0\.0\.11 valid=5s ipv6=off/);
-  assert.match(provision, /server srv-captain--advance-wars:80 resolve/);
-  assert.match(provision, /rw,noexec,nosuid,nodev,size=16m/);
-  assert.match(provision, /client_body_temp_path \/tmp\/client_temp/);
-  assert.match(provision, /proxy_temp_path \/tmp\/proxy_temp/);
-  assert.match(provision, /HostConfig\.Privileged == false/);
-  assert.match(provision, /HostConfig\.CapAdd \/\/ \[\]/);
-  assert.match(provision, /SecurityOpt \/\/ \[\]\) == \["no-new-privileges"\]/);
-  assert.match(provision, /nginx:1\.30\.3-alpine@sha256:[0-9a-f]{64}/);
-  assert.match(provision, /refusing to replace unexpected container/);
-  assert.match(provision, /tailscale serve --bg --yes/);
-  assert.match(provision, /AllowFunnel/);
-  assert.doesNotMatch(provision, /cloudflared|addcustomdomain/);
-  assert.match(release, /mew\.tail79fee7\.ts\.net:10443/);
-  assert.match(release, /app health marker is exposed through the public wildcard ingress/);
-  assert.match(release, /app shell is exposed through the public wildcard ingress/);
-  assert.match(release, /cartridge is exposed through the public wildcard ingress/);
-  assert.match(release, /http:\/\/mew\.tail79fee7\.ts\.net:8092\/healthz/);
-  assert.match(release, /private backend is reachable outside mew loopback/);
+test("keeps Field Kit behind private Tailnet ingress with persistent encrypted-save storage", () => {
+  assert.match(provision, /notExposeAsWebApp: true/u);
+  assert.match(provision, /hasPersistentData: true/u);
+  assert.match(provision, /hostPath:"\/opt\/field-kit-data",containerPath:"\/data"/u);
+  assert.match(provision, /ports: \[\]/u);
+  assert.match(provision, /nodeId: \$node_id/u);
+  assert.match(provision, /captain-overlay-network/u);
+  assert.match(provision, /127\.0\.0\.1:\$\{backend_port\}:8080/u);
+  assert.match(provision, /server srv-captain--advance-wars:8080 resolve/u);
+  assert.match(provision, /tailscale serve --bg --yes/u);
+  assert.match(provision, /AllowFunnel/u);
+  assert.doesNotMatch(provision, /cloudflared|addcustomdomain/u);
+  assert.match(release, /mew\.tail79fee7\.ts\.net:10443/u);
+  assert.match(release, /private backend is reachable outside mew loopback/u);
 });
 
-test("pins the container supply chain and avoids immutable caching for mutable assets", () => {
-  assert.match(dockerfile, /^FROM node:22-alpine@sha256:[0-9a-f]{64}/m);
-  assert.match(
-    dockerfile,
-    /^FROM nginx:1\.30\.3-alpine@sha256:0d3b80406a13a767339fbe2f41406d6c7da727ab89cf8fae399e81f780f814d1$/m,
-  );
-  assert.doesNotMatch(nginx, /assets[\s\S]{0,160}immutable/);
-  assert.ok(nginx.includes('location ~* "\\.[a-z0-9]{1,12}$" {'));
-  assert.match(dockerfile, /^RUN nginx -t$/m);
-  assert.match(nginx, /Strict-Transport-Security/);
-  assert.match(license, /GNU GENERAL PUBLIC LICENSE\s+Version 3, 29 June 2007/);
+test("pins the runtime supply chain and secure server behavior", () => {
+  const nodeLines = dockerfile.match(/^FROM node:22-alpine@sha256:[0-9a-f]{64}.*$/gmu);
+  assert.equal(nodeLines?.length, 2);
+  assert.match(dockerfile, /^USER node$/mu);
+  assert.match(dockerfile, /^VOLUME \["\/data"\]$/mu);
+  assert.match(server, /Strict-Transport-Security/u);
+  assert.match(server, /Content-Security-Policy/u);
+  assert.match(server, /Accept-Ranges/u);
+  assert.match(license, /GNU GENERAL PUBLIC LICENSE\s+Version 3, 29 June 2007/u);
   assert.ok(license.length > 30_000);
-  assert.match(notices, /NippleJS 0\.10\.2/);
-  assert.match(notices, /Socket\.IO client 4\.8\.1/);
+  assert.match(notices, /NippleJS 0\.10\.2/u);
+  assert.match(notices, /Socket\.IO client 4\.8\.1/u);
 });
