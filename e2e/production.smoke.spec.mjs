@@ -39,7 +39,10 @@ test("exact production release boots through the private HTTPS ingress", async (
     { origin, path: "/roms/advance-wars-2.gba" },
     { origin, path: expect.stringMatching(MGBA_CORE_PATH) }
   ]));
-  expect((await page.locator(".ejs_canvas").screenshot()).byteLength).toBeGreaterThan(5_000);
+  await expect.poll(
+    async () => (await page.locator(".ejs_canvas").screenshot()).byteLength,
+    { timeout: 15_000 }
+  ).toBeGreaterThan(5_000);
 
   expect(await page.evaluate(async () => {
     await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
