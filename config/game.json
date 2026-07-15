@@ -1,0 +1,10 @@
+{
+  "id": "advance-wars-2-black-hole-rising",
+  "title": "Advance Wars 2: Black Hole Rising",
+  "system": "Nintendo Game Boy Advance",
+  "core": "mgba",
+  "romFile": "advance-wars-2.gba",
+  "romBytes": 8388608,
+  "romSha256": "ef3cc89273f9df88020f07751ea6306b25c39df01893822fe431550eedf9b134",
+  "emulatorVersion": "4.2.3"
+}

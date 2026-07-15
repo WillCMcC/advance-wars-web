@@ -1,0 +1,9 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+.deploy-version
+.release-rom/
+*.gba
+.DS_Store
+*.log

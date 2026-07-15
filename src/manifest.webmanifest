@@ -1,0 +1,20 @@
+{
+  "name": "Advance Wars 2 — Field Console",
+  "short_name": "AW2 Field",
+  "description": "A browser field console for Advance Wars 2: Black Hole Rising.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#08100f",
+  "theme_color": "#e84a25",
+  "icons": [
+    {
+      "src": "/icons/command-star.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

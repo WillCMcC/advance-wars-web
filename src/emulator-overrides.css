@@ -1,0 +1,127 @@
+/* Project-specific skin layered after the pinned EmulatorJS 4.2.3 stylesheet. */
+#game.ejs_parent {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden;
+  background: #0c1513;
+  font-family: "IBM Plex Mono", ui-monospace, monospace !important;
+}
+
+#game .ejs_game,
+#game .ejs_canvas_parent,
+#game .ejs_canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#game .ejs_game_background {
+  background-position: center;
+  background-size: cover;
+}
+
+#game .ejs_start_button {
+  position: absolute;
+  z-index: 2;
+  min-width: 142px;
+  height: 52px;
+  padding: 0 24px;
+  border: 1px solid #ff8c64;
+  border-radius: 2px;
+  color: #fff7e6;
+  background: #e84a25;
+  box-shadow: 7px 7px 0 rgba(76, 24, 15, 0.8);
+  font-family: "Bebas Neue", "Arial Narrow", sans-serif;
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.13em;
+  line-height: 52px;
+  text-shadow: none;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+#game .ejs_start_button::before {
+  display: inline-block;
+  margin-right: 9px;
+  content: "★";
+  color: #f6bd3f;
+  font-size: 15px;
+  vertical-align: 2px;
+}
+
+#game .ejs_start_button:hover {
+  background: #ff6034;
+  box-shadow: 4px 4px 0 rgba(76, 24, 15, 0.8);
+  transform: translate(3px, 3px);
+}
+
+#game .ejs_start_button:focus-visible {
+  outline: 3px solid #f6bd3f;
+  outline-offset: 5px;
+}
+
+#game .ejs_loading_text {
+  color: #f3e9cf;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+#game .ejs_menu_bar,
+#game .ejs_menu_bar_parent {
+  background: rgba(6, 11, 10, 0.88) !important;
+  backdrop-filter: blur(12px);
+}
+
+#game .ejs_virtualGamepad_parent {
+  z-index: 50;
+  touch-action: none;
+}
+
+#game .ejs_virtualGamepad_button {
+  border: 2px solid rgba(255, 247, 230, 0.58) !important;
+  color: #fff7e6 !important;
+  background: rgba(232, 74, 37, 0.68) !important;
+  box-shadow: inset 0 0 0 4px rgba(77, 23, 15, 0.2), 0 3px 10px rgba(0, 0, 0, 0.22);
+  font-family: "IBM Plex Mono", ui-monospace, monospace !important;
+  text-shadow: 0 1px 2px #4b160e;
+  backdrop-filter: blur(5px);
+}
+
+#game .ejs_virtualGamepad_button.b_l,
+#game .ejs_virtualGamepad_button.b_r,
+#game .ejs_virtualGamepad_button.b_start,
+#game .ejs_virtualGamepad_button.b_select {
+  border-color: rgba(206, 222, 213, 0.55) !important;
+  background: rgba(21, 33, 30, 0.72) !important;
+}
+
+#game .ejs_virtualGamepad_button_down {
+  background: rgba(246, 189, 63, 0.88) !important;
+  transform: scale(0.94);
+}
+
+#game .ejs_dpad_main {
+  opacity: 0.88;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.32));
+}
+
+#game .ejs_dpad_bar {
+  background: rgba(16, 27, 24, 0.82) !important;
+  border: 2px solid rgba(220, 229, 213, 0.5) !important;
+}
+
+#game .ejs_settings_parent,
+#game .ejs_settings_main,
+#game .ejs_popup {
+  color: #f3e9cf;
+  background: #111b19 !important;
+  font-family: "IBM Plex Mono", ui-monospace, monospace !important;
+}
+
+@media (pointer: coarse) {
+  #game .ejs_virtualGamepad_button {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#e84a25" />
+    <meta name="description" content="Play the verified Advance Wars 2 campaign cartridge in a fast, installable browser field console." />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/command-star.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/app.css" />
+    <title>Advance Wars 2 — Field Console</title>
+  </head>
+  <body>
+    <div class="terrain" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Advance Wars 2 field console home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="img">
+            <path d="M24 2 29.7 17.5 46 18 33.1 28 37.7 44 24 34.7 10.3 44 14.9 28 2 18l16.3-.5Z" />
+          </svg>
+        </span>
+        <span>
+          <strong>Field Console</strong>
+          <small>Orange Star // Secure uplink</small>
+        </span>
+      </a>
+      <div class="header-actions">
+        <div class="status-chip" role="status" aria-live="polite" aria-atomic="true" aria-label="Game status">
+          <span class="status-light" aria-hidden="true"></span>
+          <span id="status-text">Loading emulator</span>
+        </div>
+        <button class="utility-button" id="install-button" type="button" hidden>Install</button>
+        <button class="utility-button" id="fullscreen-button" type="button">Full screen</button>
+        <button class="utility-button utility-button--solid" id="help-button" type="button">Controls</button>
+      </div>
+    </header>
+
+    <main class="page" data-release-marker="advance-wars-2-black-hole-rising">
+      <section class="play-column" aria-labelledby="game-title">
+        <div class="mission-label">
+          <span>Campaign cartridge 02</span>
+          <span>AW2E01 / Rev.00</span>
+        </div>
+
+        <div class="screen-housing" id="screen-housing">
+          <div class="housing-stripe" aria-hidden="true"></div>
+          <div class="screw screw--nw" aria-hidden="true"></div>
+          <div class="screw screw--ne" aria-hidden="true"></div>
+          <div class="screw screw--sw" aria-hidden="true"></div>
+          <div class="screw screw--se" aria-hidden="true"></div>
+          <div class="screen-bezel">
+            <div id="game" aria-label="Advance Wars 2 game display"></div>
+          </div>
+          <div class="housing-footer" aria-hidden="true">
+            <span>ARM7 FIELD UNIT</span>
+            <span class="speaker-grille"></span>
+            <span>LINK READY</span>
+          </div>
+        </div>
+
+        <div class="mobile-order" id="orientation-note">
+          <span aria-hidden="true">↻</span>
+          Rotate sideways for the roomiest touch controls.
+        </div>
+      </section>
+
+      <aside class="intel-panel" aria-labelledby="game-title">
+        <div class="intel-kicker">Mission file // 02</div>
+        <h1 id="game-title"><span>Advance</span> Wars 2</h1>
+        <p class="subtitle">Black Hole Rising</p>
+        <div class="rule"></div>
+        <p class="briefing">
+          Command Orange Star, Blue Moon, Yellow Comet, and Green Earth against the returning Black Hole army.
+        </p>
+
+        <dl class="readout-grid">
+          <div>
+            <dt>Core</dt>
+            <dd>mGBA 4.2.3</dd>
+          </div>
+          <div>
+            <dt>Save data</dt>
+            <dd>This device</dd>
+          </div>
+          <div>
+            <dt>Display</dt>
+            <dd>240 × 160</dd>
+          </div>
+          <div>
+            <dt>Input</dt>
+            <dd>Touch / pad / keys</dd>
+          </div>
+        </dl>
+
+        <div class="quick-keys" aria-label="Quick keyboard controls">
+          <div><kbd>↑↓←→</kbd><span>Move</span></div>
+          <div><kbd>Z</kbd><span>A / confirm</span></div>
+          <div><kbd>X</kbd><span>B / cancel</span></div>
+          <div><kbd>Enter</kbd><span>Start</span></div>
+          <div><kbd>Q</kbd><span>L</span></div>
+          <div><kbd>E</kbd><span>R</span></div>
+        </div>
+
+        <p class="save-note">
+          <span aria-hidden="true">●</span>
+          In-game saves and save states stay in this browser. Use the emulator menu to export a backup.
+        </p>
+
+        <footer class="legal-links">
+          EmulatorJS + mGBA · <a href="https://github.com/WillCMcC/advance-wars-web" rel="noreferrer">source</a> ·
+          <a href="/licenses/THIRD_PARTY_NOTICES.md">notices</a>
+        </footer>
+      </aside>
+    </main>
+
+    <dialog id="help-dialog" aria-labelledby="help-title">
+      <form method="dialog" class="help-card">
+        <div class="help-heading">
+          <div>
+            <span>Field manual</span>
+            <h2 id="help-title">Take command</h2>
+          </div>
+          <button class="close-button" value="close" aria-label="Close controls">×</button>
+        </div>
+        <div class="help-grid">
+          <section>
+            <h3>Computer</h3>
+            <p>Arrow keys move. <strong>Z</strong> confirms, <strong>X</strong> cancels, <strong>Enter</strong> starts, and <strong>V</strong> selects. Q / E are the shoulder buttons.</p>
+          </section>
+          <section>
+            <h3>Phone & tablet</h3>
+            <p>Tap <strong>Deploy</strong> once, then use the on-screen GBA controls. Landscape gives the map and controls the most room.</p>
+          </section>
+          <section>
+            <h3>Controller</h3>
+            <p>Any standard gamepad should work immediately. Remap it from the emulator menu if your buttons feel reversed.</p>
+          </section>
+          <section>
+            <h3>Save safely</h3>
+            <p>The original cartridge save works automatically. The menu also offers save states plus save-file import and export.</p>
+          </section>
+        </div>
+        <button class="manual-dismiss" value="close">Understood</button>
+      </form>
+    </dialog>
+
+    <script src="/assets/app.js" defer></script>
+  </body>
+</html>

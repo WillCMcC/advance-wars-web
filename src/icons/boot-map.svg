@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0v48" fill="none" stroke="#dce9d3" stroke-opacity=".08" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="glow" cx="74%" cy="20%" r="72%">
+      <stop offset="0" stop-color="#285f69" stop-opacity=".7"/>
+      <stop offset="1" stop-color="#101a18" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="960" height="640" fill="#101a18"/>
+  <rect width="960" height="640" fill="url(#glow)"/>
+  <rect width="960" height="640" fill="url(#grid)"/>
+  <g fill="none" stroke="#e84a25" stroke-opacity=".18" stroke-width="3">
+    <path d="M-20 495C104 412 154 520 273 453s176-24 264-99 173-18 257-95 150-46 194-86"/>
+    <path d="M-43 541C91 455 173 589 298 494s174-22 271-91 174-21 260-98 131-42 173-90"/>
+    <path d="M-60 587C84 510 182 634 329 539s167-32 278-96 151-29 248-92 123-52 168-95"/>
+  </g>
+  <g transform="translate(480 310) rotate(-5)">
+    <path d="m0-112 26 72 76 2-60 47 21 74L0 40l-63 43 21-74-60-47 76-2Z" fill="#e84a25" fill-opacity=".84"/>
+    <circle r="147" fill="none" stroke="#f3e9cf" stroke-opacity=".16" stroke-width="2" stroke-dasharray="8 12"/>
+    <circle r="182" fill="none" stroke="#f3e9cf" stroke-opacity=".08" stroke-width="2"/>
+  </g>
+  <text x="480" y="548" fill="#f3e9cf" fill-opacity=".52" font-family="monospace" font-size="16" letter-spacing="5" text-anchor="middle">CARTRIDGE LINK ESTABLISHED</text>
+</svg>
