@@ -60,7 +60,7 @@ test("keeps game and save inputs outside version control", () => {
 });
 
 test("publishes the Field Kit library, accessible controls, and durable release marker", () => {
-  assert.match(html, /data-release-marker="field-kit-model-art-v1"/u);
+  assert.match(html, /data-release-marker="field-kit-mobile-command-deck-v2"/u);
   assert.match(html, /id="cartridge-dock"/u);
   assert.match(html, /id="sync-dialog"/u);
   assert.match(html, /aria-label="Field Kit save pairing QR code"/u);

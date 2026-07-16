@@ -55,7 +55,7 @@ test("exact production release boots both cartridges through private HTTPS", asy
     await page.goto(`/?game=${game.id}&e2e=1&release=${expected}`, { waitUntil: "domcontentloaded" });
     expect(await page.evaluate(() => window.isSecureContext)).toBe(true);
     await expect(page).toHaveTitle(game.title);
-    await expect(page.locator("main")).toHaveAttribute("data-release-marker", "field-kit-model-art-v1");
+    await expect(page.locator("main")).toHaveAttribute("data-release-marker", "field-kit-mobile-command-deck-v2");
     await expect(page.locator("main")).toHaveAttribute("data-active-game", game.id);
     await expect(page.locator("#status-text")).toHaveText("Ready to launch");
     expect(await page.evaluate(() => window.EJS_backgroundImage)).toBe(game.bootImage);
@@ -85,5 +85,5 @@ test("exact production release boots both cartridges through private HTTPS", asy
   })).toBe(`${origin}/`);
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
-  await expect(page.locator("main")).toHaveAttribute("data-release-marker", "field-kit-model-art-v1");
+  await expect(page.locator("main")).toHaveAttribute("data-release-marker", "field-kit-mobile-command-deck-v2");
 });

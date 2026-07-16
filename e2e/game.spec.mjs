@@ -55,7 +55,7 @@ test("renders the private two-cartridge Field Kit with no external runtime reque
 
   await page.goto(gameUrl(games[0]));
   await expect(page).toHaveTitle(games[0].title);
-  await expect(page.locator("main")).toHaveAttribute("data-release-marker", "field-kit-model-art-v1");
+  await expect(page.locator("main")).toHaveAttribute("data-release-marker", "field-kit-mobile-command-deck-v2");
   await expect(page.locator("main")).toHaveAttribute("data-active-game", games[0].id);
   await expect(page.getByRole("navigation", { name: "Choose a game" }).getByRole("link")).toHaveCount(2);
   await expect(page.getByRole("link", { name: /ER Roguelike/u })).toHaveAttribute("href", `/?game=${games[1].id}`);
@@ -213,6 +213,107 @@ test("keeps both shoulder controls inside the real iPhone landscape hit area", a
     horizontal: document.documentElement.scrollWidth - innerWidth,
     vertical: document.documentElement.scrollHeight - innerHeight
   }))).toEqual({ horizontal: 0, vertical: 0 });
+  await context.close();
+});
+
+test("gives portrait phones a full-width game stage and ordered thumb deck", async ({ browser }, testInfo) => {
+  const context = await browser.newContext({
+    ...devices["iPhone 13"],
+    baseURL: testInfo.project.use.baseURL,
+    serviceWorkers: "block"
+  });
+  const page = await context.newPage();
+  await boot(page, games[0]);
+
+  const geometry = await page.evaluate(() => {
+    const rect = (selector) => {
+      const box = document.querySelector(selector).getBoundingClientRect();
+      return { top: box.top, right: box.right, bottom: box.bottom, left: box.left, width: box.width, height: box.height };
+    };
+    const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    const viewport = { width: innerWidth, height: innerHeight };
+    const header = rect(".site-header");
+    const game = rect("#game");
+    const stage = rect(".ejs_canvas_parent");
+    const dpad = rect(".ejs_dpad_main");
+    const a = rect(".b_a");
+    const b = rect(".b_b");
+    const l = rect(".b_l");
+    const r = rect(".b_r");
+    const select = rect(".b_select");
+    const start = rect(".b_start");
+    const controls = [dpad, a, b, l, r, select, start];
+    return {
+      viewport,
+      header,
+      game,
+      stage,
+      dpad,
+      a,
+      b,
+      l,
+      r,
+      select,
+      start,
+      controlsInside: controls.every((control) =>
+        control.left >= game.left && control.top >= game.top && control.right <= game.right && control.bottom <= game.bottom
+      ),
+      majorClustersSeparate: !overlaps(dpad, a) && !overlaps(dpad, b),
+      utilityRowSeparate: !overlaps(select, start),
+      minimumButtonTarget: [a, b, l, r, select, start].every((control) => control.width >= 44 && control.height >= 44),
+      overflow: document.documentElement.scrollWidth - innerWidth
+    };
+  });
+
+  expect(geometry.header.height).toBeLessThanOrEqual(60);
+  expect(geometry.stage.width).toBeGreaterThanOrEqual(geometry.viewport.width - 16);
+  expect(geometry.stage.width / geometry.stage.height).toBeCloseTo(1.5, 1);
+  expect(geometry.stage.bottom).toBeLessThan(geometry.l.top);
+  expect(geometry.l.top).toBeCloseTo(geometry.r.top, 1);
+  expect(geometry.select.top).toBeCloseTo(geometry.start.top, 1);
+  expect(geometry.dpad.width).toBeGreaterThanOrEqual(112);
+  expect(Math.min(geometry.a.width, geometry.a.height, geometry.b.width, geometry.b.height)).toBeGreaterThanOrEqual(48);
+  expect(geometry.controlsInside).toBe(true);
+  expect(geometry.majorClustersSeparate).toBe(true);
+  expect(geometry.utilityRowSeparate).toBe(true);
+  expect(geometry.minimumButtonTarget).toBe(true);
+  expect(geometry.overflow).toBeLessThanOrEqual(1);
+  await context.close();
+});
+
+test("keeps the command deck usable at the 320px phone floor", async ({ browser }, testInfo) => {
+  const context = await browser.newContext({
+    ...devices["iPhone 13"],
+    viewport: { width: 320, height: 568 },
+    baseURL: testInfo.project.use.baseURL,
+    serviceWorkers: "block"
+  });
+  const page = await context.newPage();
+  await boot(page, games[0]);
+
+  const geometry = await page.evaluate(() => {
+    const game = document.querySelector("#game").getBoundingClientRect();
+    const stage = document.querySelector(".ejs_canvas_parent").getBoundingClientRect();
+    const dpad = document.querySelector(".ejs_dpad_main").getBoundingClientRect();
+    const buttons = [...document.querySelectorAll(".b_a, .b_b, .b_l, .b_r, .b_select, .b_start")]
+      .map((element) => element.getBoundingClientRect());
+    const controls = [dpad, ...buttons];
+    return {
+      headerHeight: document.querySelector(".site-header").getBoundingClientRect().height,
+      stageWidth: stage.width,
+      controlsInside: controls.every((control) =>
+        control.left >= game.left && control.top >= game.top && control.right <= game.right && control.bottom <= game.bottom
+      ),
+      minimumButtonTarget: buttons.every((control) => control.width >= 44 && control.height >= 44),
+      overflow: document.documentElement.scrollWidth - innerWidth
+    };
+  });
+
+  expect(geometry.headerHeight).toBeLessThanOrEqual(60);
+  expect(geometry.stageWidth).toBeGreaterThanOrEqual(304);
+  expect(geometry.controlsInside).toBe(true);
+  expect(geometry.minimumButtonTarget).toBe(true);
+  expect(geometry.overflow).toBeLessThanOrEqual(1);
   await context.close();
 });
 

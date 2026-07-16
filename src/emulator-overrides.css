@@ -125,3 +125,114 @@
     min-height: 48px;
   }
 }
+
+@media (pointer: coarse) and (orientation: portrait) and (max-width: 760px) {
+  #game .ejs_canvas_parent {
+    height: auto !important;
+    aspect-ratio: 3 / 2;
+    border-bottom: 1px solid rgba(230, 239, 213, 0.16);
+    background: #020504;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+  }
+
+  #game .ejs_canvas {
+    height: 100% !important;
+  }
+
+  #game .ejs_virtualGamepad_parent {
+    bottom: 16px;
+  }
+
+  #game .ejs_virtualGamepad_parent::before {
+    position: absolute;
+    right: 14px;
+    bottom: 246px;
+    left: 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(230, 239, 213, 0.13);
+    content: "FIELD CONTROLS";
+    color: rgba(206, 222, 213, 0.46);
+    font: 600 8px/1 "IBM Plex Mono", ui-monospace, monospace;
+    letter-spacing: 0.18em;
+    pointer-events: none;
+  }
+
+  #game .ejs_virtualGamepad_left,
+  #game .ejs_virtualGamepad_right {
+    bottom: 54px;
+    width: clamp(112px, 32vw, 132px);
+    height: clamp(112px, 32vw, 132px);
+  }
+
+  #game .ejs_virtualGamepad_left {
+    left: clamp(10px, 4vw, 18px);
+  }
+
+  #game .ejs_virtualGamepad_right {
+    right: clamp(10px, 4vw, 18px);
+  }
+
+  #game .ejs_virtualGamepad_bottom {
+    bottom: 0;
+    left: 50%;
+    width: min(164px, 52vw);
+    height: 46px;
+    margin-left: 0;
+    transform: translateX(-50%);
+  }
+
+  #game .ejs_virtualGamepad_button.b_a,
+  #game .ejs_virtualGamepad_button.b_b {
+    width: 56px;
+    height: 56px;
+    line-height: 52px;
+  }
+
+  #game .ejs_virtualGamepad_button.b_a {
+    top: 18px !important;
+    right: 0 !important;
+    left: auto !important;
+  }
+
+  #game .ejs_virtualGamepad_button.b_b {
+    top: 62px !important;
+    left: 0 !important;
+  }
+
+  #game .ejs_virtualGamepad_button.b_l,
+  #game .ejs_virtualGamepad_button.b_r {
+    top: -50px !important;
+    width: 64px;
+    height: 44px !important;
+    min-height: 44px;
+    line-height: 40px !important;
+  }
+
+  #game .ejs_virtualGamepad_button.b_l {
+    left: 0 !important;
+  }
+
+  #game .ejs_virtualGamepad_button.b_r {
+    right: 0 !important;
+    left: auto !important;
+  }
+
+  #game .ejs_virtualGamepad_button.b_start,
+  #game .ejs_virtualGamepad_button.b_select {
+    top: 0 !important;
+    width: 70px;
+    height: 44px !important;
+    min-height: 44px;
+    line-height: 40px !important;
+    font-size: 11px !important;
+  }
+
+  #game .ejs_virtualGamepad_button.b_select {
+    left: 4px !important;
+  }
+
+  #game .ejs_virtualGamepad_button.b_start {
+    right: 4px !important;
+    left: auto !important;
+  }
+}

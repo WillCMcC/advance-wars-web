@@ -974,6 +974,119 @@ dialog::backdrop {
   }
 }
 
+/* field-kit-mobile-command-deck-v2: full-width play with ordered thumb zones. */
+@media (pointer: coarse) and (orientation: portrait) and (max-width: 760px) {
+  .site-header {
+    display: grid;
+    grid-template-areas: "dock sync help";
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 4px;
+    min-height: 0;
+    padding: max(5px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right)) 5px max(4px, env(safe-area-inset-left));
+  }
+
+  .brand,
+  .status-chip,
+  #install-button,
+  #fullscreen-button {
+    display: none !important;
+  }
+
+  .cartridge-dock {
+    grid-area: dock;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .cartridge-tab {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 4px;
+    width: auto;
+    min-width: 0;
+    min-height: 46px;
+    padding: 4px 6px;
+  }
+
+  .cartridge-tab > span {
+    font-size: 19px;
+  }
+
+  .cartridge-tab small {
+    overflow: hidden;
+    font-size: 7px;
+    letter-spacing: 0.06em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-actions {
+    display: contents;
+  }
+
+  #sync-button,
+  #help-button {
+    min-height: 46px;
+    padding-inline: 8px;
+    font-size: 8px;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  #sync-button {
+    grid-area: sync;
+    width: 72px;
+  }
+
+  #help-button {
+    grid-area: help;
+    width: 64px;
+  }
+
+  .page {
+    padding: 6px max(2px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(2px, env(safe-area-inset-left));
+  }
+
+  .mission-label,
+  .housing-footer,
+  .screw,
+  .mobile-order {
+    display: none;
+  }
+
+  .screen-housing {
+    padding: 2px 2px 6px;
+    border-radius: 3px 3px 20px 3px;
+    box-shadow:
+      0 14px 34px rgba(0, 0, 0, 0.38),
+      0 5px 0 #050908,
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .housing-stripe {
+    left: 0;
+    width: 3px;
+    box-shadow: 6px 0 0 color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+
+  .screen-bezel {
+    height: min(
+      calc(100svh - 62px - env(safe-area-inset-top) - env(safe-area-inset-bottom)),
+      clamp(510px, calc(66.667vw + 330px), 610px)
+    );
+    border-width: 2px;
+    border-radius: 3px 3px 16px 3px;
+  }
+
+  .intel-panel {
+    margin-top: 28px;
+  }
+}
+
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 620px) {
   body {
     height: 100svh;

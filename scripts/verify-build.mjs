@@ -60,7 +60,7 @@ for (const game of config.games) {
 }
 
 const html = await readFile(path.join(dist, "index.html"), "utf8");
-assert.match(html, /data-release-marker="field-kit-model-art-v1"/u);
+assert.match(html, /data-release-marker="field-kit-mobile-command-deck-v2"/u);
 assert.match(html, /<title>Field Kit<\/title>/u);
 
 const app = await readFile(path.join(dist, "assets/app.js"), "utf8");

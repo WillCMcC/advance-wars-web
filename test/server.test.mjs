@@ -11,7 +11,7 @@ async function fixture(t) {
   const data = path.join(root, "data");
   await mkdir(path.join(dist, "roms"), { recursive: true });
   await mkdir(path.join(dist, "art"), { recursive: true });
-  await writeFile(path.join(dist, "index.html"), "<main data-release-marker=\"field-kit-model-art-v1\">Field Kit</main>");
+  await writeFile(path.join(dist, "index.html"), "<main data-release-marker=\"field-kit-mobile-command-deck-v2\">Field Kit</main>");
   await writeFile(path.join(dist, "roms", "sample.gba"), Buffer.from("0123456789"));
   await writeFile(path.join(dist, "art", "sample.webp"), Buffer.from("RIFF0000WEBP"));
   const server = createFieldKitServer({ distDir: dist, dataDir: data });
@@ -29,7 +29,7 @@ test("serves the private shell, health probes, and byte ranges", async (t) => {
   const { origin } = await fixture(t);
   const page = await fetch(origin);
   assert.equal(page.status, 200);
-  assert.match(await page.text(), /field-kit-model-art-v1/u);
+  assert.match(await page.text(), /field-kit-mobile-command-deck-v2/u);
   assert.equal(page.headers.get("cross-origin-opener-policy"), "same-origin");
   const artwork = await fetch(`${origin}/art/sample.webp`);
   assert.equal(artwork.status, 200);
