@@ -1,0 +1,23 @@
+preMergeGate: npm ci --omit=optional && npm test
+deployments:
+  - id: private-web
+    label: mew.tail79fee7.ts.net:10443
+    cwd: .
+    command:
+      - env
+      - ADVANCE_WARS_PROJECTS_RELEASE=1
+      - ./bin/release.sh
+    app: advance-wars
+    timeoutSeconds: 1800
+    checks:
+      - url: https://mew.tail79fee7.ts.net:10443/version.json
+        commit: true
+      - url: https://mew.tail79fee7.ts.net:10443/healthz
+        contains: field kit ok
+      - url: https://mew.tail79fee7.ts.net:10443/api/healthz
+        contains: '"storage":"writable"'
+      - url: https://mew.tail79fee7.ts.net:10443/
+        contains: data-release-marker="field-kit-mobile-command-deck-v2"
+      - url: https://mew.tail79fee7.ts.net:10443/
+        assetContains: field-kit-mobile-command-deck-v2
+    purgeDomains: []
