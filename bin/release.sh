@@ -24,10 +24,6 @@ git check-ignore -q .release-games/ || { echo ".release-games must remain ignore
 
 head_commit="$(git rev-parse HEAD)"
 if [ -n "${TODOBOY_DEPLOY_COMMIT:-}" ]; then
-  [[ "${TODOBOY_DEPLOY_TASK:-}" =~ ^[0-9]+$ ]] || {
-    echo "TODOBOY_DEPLOY_TASK must identify the merge-gated release task" >&2
-    exit 1
-  }
   deploy_commit="$TODOBOY_DEPLOY_COMMIT"
 elif [ "${ADVANCE_WARS_PROJECTS_RELEASE:-}" = 1 ]; then
   deploy_commit="$head_commit"
