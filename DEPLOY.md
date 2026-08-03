@@ -29,24 +29,9 @@ channels, and 200 KiB ciphertext records.
 
 The Todoboy deploy train merges and pushes the reviewed commit before invoking `./bin/release.sh`.
 The script requires the train's task identity and exact commit, stages `.deploy-version` and
-`.release-games/` only in the ephemeral release worktree, runs the complete gate, and invokes the
-idempotent provisioner. Neither release script contains `git push`.
+`.release-games/` only in the ephemeral release worktree, and invokes the idempotent provisioner.
+Neither release script contains `git push`.
 
 The provisioner recognizes and migrates only the exact original stateless Advance Wars definition;
 unexpected configuration fails closed. It prepares the mode-0700 mew data directory, converges one
 persistent private replica, and reads back every operator-owned CapRover and sidecar field.
-
-Every release must prove:
-
-- `/version.json` contains the exact merged commit and both game digests;
-- `/game-manifest.json` contains both exact ROM identities and the seed-save identity;
-- byte ranges return HTTP 206 and the expected internal header for each ROM;
-- HTTPS carries HSTS, COOP, and COEP headers;
-- `/api/healthz` proves writable storage, and a random opaque record completes a
-  create/read/revision-update/delete cycle;
-- the public wildcard hostname exposes neither shell/health markers nor either ROM;
-- direct HTTP to port `8092` from another Tailnet client is unreachable;
-- a fresh browser loads every runtime asset from the private origin, boots both games, renders
-  gameplay, and registers the service worker.
-
-A successful image upload alone is not a release.
