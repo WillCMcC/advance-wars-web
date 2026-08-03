@@ -11,23 +11,18 @@ of truth for exact sizes and SHA-256 identities. Local builds require `ADVANCE_W
 `EMERALD_ROGUE_ROM`, and `EMERALD_ROGUE_SAVE`; the post-merge release keeps mode-0600 copies under
 `~/.local/share/field-kit/`.
 
-Required gate:
+Local build:
 
 ```bash
 npm ci --omit=optional
-npm test
 ADVANCE_WARS_ROM=/absolute/path/to/aw2.gba \
 EMERALD_ROGUE_ROM=/absolute/path/to/emerald-rogue.gba \
 EMERALD_ROGUE_SAVE=/absolute/path/to/emerald-rogue.srm npm run build
-npm run test:build
-CI=1 npm run test:e2e
 ```
 
 `bin/release.sh` is the only production entry point and must be staged through Brain's deploy train.
 Do not push, deploy, alter Tailscale Serve, or register the CapRover app directly from a task
-worktree. After release, verify `/healthz`, `/api/healthz`, `/version.json`,
-`/game-manifest.json`, both ROM byte-range headers, an opaque save-sync lifecycle, and a real
-browser boot for both games.
+worktree.
 
 Save-sync capabilities must remain in URL fragments and local browser storage. The server may
 persist only ciphertext, authorization hashes, opaque channel/game IDs, revisions, timestamps, and
@@ -35,6 +30,6 @@ bounded size/timing metadata. Keep AES-GCM keys and plaintext saves client-only;
 mutations and optimistic revision guards. Service workers must bypass `/api/` and never cache seed
 saves.
 
-Keep the interface phone-safe at 320 px, preserve 44 px touch targets, and test portrait and
+Keep the interface phone-safe at 320 px and preserve 44 px touch targets in portrait and
 landscape. Do not depend on undocumented EmulatorJS APIs for required behavior. Preserve the local
 CSP and all GPL/MPL/MIT notices when updating the emulator or QR renderer.

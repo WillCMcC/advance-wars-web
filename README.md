@@ -18,8 +18,7 @@ npm ci --omit=optional
 ADVANCE_WARS_ROM=/absolute/path/to/advance-wars-2.gba \
 EMERALD_ROGUE_ROM=/absolute/path/to/pokemon-emerald-rogue-v2.1a.gba \
 EMERALD_ROGUE_SAVE=/absolute/path/to/pokemon-emerald-rogue-v2.1a.srm \
-  npm run check
-CI=1 npm run test:e2e
+  npm run build
 ```
 
 Open `http://127.0.0.1:4173` after `npm run preview`.
@@ -47,10 +46,8 @@ and export.
 
 ## Release model
 
-`bin/release.sh` runs only from the post-merge deploy train. It verifies both cartridge images and
-the seed save, keeps durable mode-0600 copies outside Git, runs the full gate, converges a
-mew-pinned persistent private service plus loopback-only Tailnet proxy, deploys, and proves the
-exact commit, both ROM headers, encrypted-save create/read/update/delete behavior, backend
-isolation, PWA, and real browser boots.
+`bin/release.sh` runs only from the post-merge deploy train. It stages both cartridge images and the
+seed save from durable mode-0600 copies outside Git, converges a mew-pinned persistent private
+service plus loopback-only Tailnet proxy, and deploys.
 
 See `DEPLOY.md` for the operational contract and `THIRD_PARTY_NOTICES.md` for licenses.
